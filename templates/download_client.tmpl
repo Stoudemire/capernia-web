@@ -82,20 +82,8 @@
                         var termsSection = document.getElementById('termsSection');
                         var downloadSection = document.getElementById('downloadSection');
                         
-                        // Smooth fade out the terms section
-                        termsSection.style.transition = 'opacity 0.3s ease';
-                        termsSection.style.opacity = '0';
-                        
-                        setTimeout(function() {
-                            termsSection.style.display = 'none';
-                            downloadSection.style.display = 'block';
-                            downloadSection.style.opacity = '0';
-                            downloadSection.style.transition = 'opacity 0.3s ease';
-                            
-                            // Trigger reflow to enable transition
-                            downloadSection.offsetHeight;
-                            downloadSection.style.opacity = '1';
-                        }, 300);
+                        termsSection.style.display = 'none';
+                        downloadSection.style.display = 'block';
                     }
                 </script>
 

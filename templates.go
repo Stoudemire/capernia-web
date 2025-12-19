@@ -87,6 +87,9 @@ type (
                 CurrentSkillName  string
                 CurrentSkillDisplay string
                 CurrentVocation   string
+                CurrentPage       int
+                TotalPages        int
+                TotalHighscores   int
         }
 
         NewsArchiveTmplData struct {
@@ -117,6 +120,7 @@ func InitTemplates() bool {
                 "FormatDurationSince": FormatDurationSince,
                 "add": func(a, b int) int { return a + b },
                 "sub": func(a, b int) int { return a - b },
+                "mul": func(a, b int) int { return a * b },
                 "until": func(n int) []int {
                         result := make([]int, n)
                         for i := 0; i < n; i++ {
@@ -299,13 +303,45 @@ func RenderHighscores(Context *THttpRequestContext, Skill string, Vocation strin
                 skillDisp = disp
         }
         
+        pageStr := Context.Request.URL.Query().Get("page")
+        page := 1
+        if pageStr != "" {
+                p, err := strconv.Atoi(pageStr)
+                if err == nil && p > 0 {
+                        page = p
+                }
+        }
+
+        itemsPerPage := 50
+        allHighscores := GetHighscores(Skill, Vocation)
+        totalHighscores := len(allHighscores)
+        totalPages := (totalHighscores + itemsPerPage - 1) / itemsPerPage
+        if totalPages < 1 {
+                totalPages = 1
+        }
+
+        startIdx := (page - 1) * itemsPerPage
+        endIdx := startIdx + itemsPerPage
+        if startIdx >= totalHighscores {
+                startIdx = 0
+                page = 1
+        }
+        if endIdx > totalHighscores {
+                endIdx = totalHighscores
+        }
+
+        paginatedHighscores := allHighscores[startIdx:endIdx]
+        
         ExecuteTemplate(Context.Writer, "highscores.tmpl",
                 HighscoresTmplData{
                         Common: GetCommonTmplData("Highscores", Context.AccountID),
-                        Highscores:        GetHighscores(Skill, Vocation),
+                        Highscores:        paginatedHighscores,
                         CurrentSkill:      Skill,
                         CurrentSkillDisplay: skillDisp,
                         CurrentVocation:   Vocation,
+                        CurrentPage:       page,
+                        TotalPages:        totalPages,
+                        TotalHighscores:   totalHighscores,
                 })
 }
 

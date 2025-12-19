@@ -3,6 +3,7 @@ package main
 import (
         "encoding/binary"
         "net"
+        "sort"
         "strings"
         "sync"
         "time"
@@ -653,6 +654,14 @@ func GetWorlds() []TWorld {
                 if Result == 0 {
                         g_WorldCache = Worlds
                         g_WorldCacheRefreshTime = time.Now().Add(g_WorldRefreshInterval)
+                } else {
+                        // Demo mode: return mock worlds
+                        g_WorldCache = []TWorld{
+                                {Name: "Thais", Type: "Normal", NumPlayers: 245, MaxPlayers: 500, OnlinePeak: 289, OnlinePeakTimestamp: int(time.Now().Unix()), LastStartup: int(time.Now().Unix()) - 86400, LastShutdown: int(time.Now().Unix()) - 172800},
+                                {Name: "Fibula", Type: "Non-PvP", NumPlayers: 156, MaxPlayers: 400, OnlinePeak: 198, OnlinePeakTimestamp: int(time.Now().Unix()), LastStartup: int(time.Now().Unix()) - 86400, LastShutdown: int(time.Now().Unix()) - 172800},
+                                {Name: "Carnivora", Type: "PvP-Enforced", NumPlayers: 89, MaxPlayers: 300, OnlinePeak: 142, OnlinePeakTimestamp: int(time.Now().Unix()), LastStartup: int(time.Now().Unix()) - 86400, LastShutdown: int(time.Now().Unix()) - 172800},
+                        }
+                        g_WorldCacheRefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 }
         }
         return g_WorldCache
@@ -695,6 +704,20 @@ func GetOnlineCharacters(World string) []TOnlineCharacter {
                         Entry.World = World
                         Entry.Data = Characters
                         Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
+                } else {
+                        // Demo mode: return mock data
+                        mockCharacters := []TOnlineCharacter{
+                                {Name: "Legendary Warrior", Level: 250, Profession: "Knight"},
+                                {Name: "Arcane Sorcerer", Level: 220, Profession: "Sorcerer"},
+                                {Name: "Holy Priest", Level: 200, Profession: "Druid"},
+                                {Name: "Shadow Assassin", Level: 210, Profession: "Paladin"},
+                                {Name: "Master Ranger", Level: 195, Profession: "Knight"},
+                        }
+                        g_OnlineCharactersCache = append(g_OnlineCharactersCache, TOnlineCharactersCacheEntry{})
+                        Entry = &g_OnlineCharactersCache[len(g_OnlineCharactersCache)-1]
+                        Entry.World = World
+                        Entry.Data = mockCharacters
+                        Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 }
         }
 
@@ -731,6 +754,20 @@ func GetKillStatistics(World string) []TKillStatistics {
                         Entry = &g_KillStatisticsCache[len(g_KillStatisticsCache)-1]
                         Entry.World = World
                         Entry.Data = Stats
+                        Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
+                } else {
+                        // Demo mode: return mock kill statistics
+                        mockStats := []TKillStatistics{
+                                {RaceName: "Dragon Lord", TimesKilled: 1247, PlayersKilled: 89},
+                                {RaceName: "Demon", TimesKilled: 3421, PlayersKilled: 156},
+                                {RaceName: "Giant Spider", TimesKilled: 8932, PlayersKilled: 234},
+                                {RaceName: "Vampire", TimesKilled: 2156, PlayersKilled: 76},
+                                {RaceName: "Cyclops", TimesKilled: 5634, PlayersKilled: 142},
+                        }
+                        g_KillStatisticsCache = append(g_KillStatisticsCache, TKillStatisticsCacheEntry{})
+                        Entry = &g_KillStatisticsCache[len(g_KillStatisticsCache)-1]
+                        Entry.World = World
+                        Entry.Data = mockStats
                         Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 }
         }
@@ -769,16 +806,36 @@ func GetHighscores(Skill string, Vocation string) []THighscore {
                 "knight": "Knight",
         }
 
-        // Mock highscores data with profession information
-        mockData := []THighscore{
-                {CharacterName: "Loniu", Profession: "Sorcerer", Level: 250, SkillName: skillName, SkillValue: 86},
-                {CharacterName: "Reka Czlowieka Chaotycznego", Profession: "Sorcerer", Level: 200, SkillName: skillName, SkillValue: 86},
-                {CharacterName: "Knight Elite", Profession: "Knight", Level: 250, SkillName: skillName, SkillValue: 120},
-                {CharacterName: "Mage Master", Profession: "Druid", Level: 200, SkillName: skillName, SkillValue: 115},
-                {CharacterName: "Archer Deadly", Profession: "Paladin", Level: 180, SkillName: skillName, SkillValue: 110},
-                {CharacterName: "Paladin Holy", Profession: "Paladin", Level: 220, SkillName: skillName, SkillValue: 105},
-                {CharacterName: "Druid Ancient", Profession: "Druid", Level: 190, SkillName: skillName, SkillValue: 100},
+        vocList := []string{"Sorcerer", "Druid", "Paladin", "Knight"}
+        prefixes := []string{"The", "Great", "Mighty", "Dark", "Light", "Holy", "Shadow", "Dragon", "Titan", "Phoenix", "Ancient", "Royal", "Elite", "Savage", "Mystic", "Eternal", "Legendary", "Supreme"}
+        suffixes := []string{"Slayer", "Master", "Warrior", "Mage", "Knight", "Paladin", "Ranger", "Sage", "Hunter", "Blade", "Soul", "Heart", "Spirit", "Power", "Storm", "Flame", "Frost", "Void"}
+        
+        // Generate 100 mock characters
+        mockData := []THighscore{}
+        for i := 0; i < 100; i++ {
+                level := 100 + (i % 151)
+                skillValue := 50 + (i % 121)
+                prof := vocList[i%4]
+                prefix := prefixes[i%len(prefixes)]
+                suffix := suffixes[i%len(suffixes)]
+                name := prefix + " " + suffix
+                if i%5 == 0 {
+                        name = prefix + " " + suffix + " " + string(rune('I'+i/25))
+                }
+                
+                mockData = append(mockData, THighscore{
+                        CharacterName: name,
+                        Profession:    prof,
+                        Level:         level,
+                        SkillName:     skillName,
+                        SkillValue:    skillValue,
+                })
         }
+
+        // Sort by skill value descending (highest first)
+        sort.Slice(mockData, func(i, j int) bool {
+                return mockData[i].SkillValue > mockData[j].SkillValue
+        })
 
         // Filter by skill and vocation if provided
         if Skill != "" || Vocation != "" {
