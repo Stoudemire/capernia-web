@@ -628,6 +628,74 @@ func HandleGuilds(Context *THttpRequestContext) {
         RenderGuilds(Context, Guilds)
 }
 
+func HandleGuildCreate(Context *THttpRequestContext) {
+        if Context.AccountID <= 0 {
+                Redirect(Context, "/account")
+                return
+        }
+
+        switch Context.Request.Method {
+        case http.MethodGet:
+                Result, Account := GetAccountSummary(Context.AccountID)
+                if Result != 0 {
+                        RenderMessage(Context, "Error", "Failed to retrieve account information.")
+                        return
+                }
+                RenderGuildCreate(Context, &Account)
+        case http.MethodPost:
+                GuildName := strings.TrimSpace(Context.Request.FormValue("guildname"))
+                LeaderCharacter := strings.TrimSpace(Context.Request.FormValue("leadercharacter"))
+
+                if GuildName == "" || LeaderCharacter == "" {
+                        RenderMessage(Context, "Error", "Guild name and leader character are required.")
+                        return
+                }
+
+                if len(GuildName) < 3 || len(GuildName) > 50 {
+                        RenderMessage(Context, "Error", "Guild name must be between 3 and 50 characters.")
+                        return
+                }
+
+                Result, Account := GetAccountSummary(Context.AccountID)
+                if Result != 0 {
+                        RenderMessage(Context, "Error", "Failed to retrieve account information.")
+                        return
+                }
+
+                if Account.PremiumDays <= 0 {
+                        RenderMessage(Context, "Error", "Only premium accounts can found guilds.")
+                        return
+                }
+
+                CharFound := false
+                for _, Char := range Account.Characters {
+                        if Char.Name == LeaderCharacter {
+                                CharFound = true
+                                break
+                        }
+                }
+
+                if !CharFound {
+                        RenderMessage(Context, "Error", "Invalid leader character.")
+                        return
+                }
+
+                CreateResult := CreateGuild(GuildName, LeaderCharacter)
+                switch CreateResult {
+                case 0:
+                        RenderMessage(Context, "Success", fmt.Sprintf("Guild '%v' has been founded! %v is now the guild leader.", GuildName, LeaderCharacter))
+                case 1:
+                        RenderMessage(Context, "Error", "A guild with that name already exists.")
+                case 2:
+                        RenderMessage(Context, "Error", "That character is already leading a guild.")
+                default:
+                        RenderMessage(Context, "Error", "Failed to create guild.")
+                }
+        default:
+                NotFound(Context)
+        }
+}
+
 func HandleGuildDetail(Context *THttpRequestContext) {
         GuildIDStr := Context.Request.URL.Query().Get("id")
         if GuildIDStr == "" {
@@ -648,7 +716,106 @@ func HandleGuildDetail(Context *THttpRequestContext) {
         }
         
         Members := GetGuildMembers(GuildID)
-        RenderGuildDetail(Context, Guild, Members)
+        LeaderCharID := GetGuildLeaderCharID(GuildID)
+        IsLeader := (Context.AccountID > 0 && IsCharacterLeader(Context.AccountID, GuildID))
+        IsViceLeader := (Context.AccountID > 0 && GetCharacterGuildRank(Context.AccountID, GuildID) == 1)
+        RenderGuildDetail(Context, Guild, Members, IsLeader, IsViceLeader, LeaderCharID)
+}
+
+func HandleGuildInvite(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                GuildIDStr := Context.Request.FormValue("guildid")
+                CharacterName := strings.TrimSpace(Context.Request.FormValue("charactername"))
+
+                GuildID, Err := strconv.Atoi(GuildIDStr)
+                if Err != nil || CharacterName == "" {
+                        RenderMessage(Context, "Error", "Invalid guild or character name.")
+                        return
+                }
+
+                if !IsCharacterLeaderOrViceLeader(Context.AccountID, GuildID) {
+                        RenderMessage(Context, "Error", "Only guild leaders and vice-leaders can invite players.")
+                        return
+                }
+
+                Result := InviteCharacterToGuild(GuildID, CharacterName)
+                switch Result {
+                case 0:
+                        RenderMessage(Context, "Success", fmt.Sprintf("%v has been invited to the guild.", CharacterName))
+                case 1:
+                        RenderMessage(Context, "Error", "Character not found.")
+                case 2:
+                        RenderMessage(Context, "Error", "Character is already in the guild.")
+                case 3:
+                        RenderMessage(Context, "Error", "Character already has a guild invitation.")
+                default:
+                        RenderMessage(Context, "Error", "Failed to invite character.")
+                }
+        } else {
+                NotFound(Context)
+        }
+}
+
+func HandleGuildRevokeInvite(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                GuildIDStr := Context.Request.FormValue("guildid")
+                CharacterName := strings.TrimSpace(Context.Request.FormValue("charactername"))
+
+                GuildID, Err := strconv.Atoi(GuildIDStr)
+                if Err != nil || CharacterName == "" {
+                        RenderMessage(Context, "Error", "Invalid guild or character name.")
+                        return
+                }
+
+                if !IsCharacterLeader(Context.AccountID, GuildID) {
+                        RenderMessage(Context, "Error", "Only guild leaders can revoke invitations.")
+                        return
+                }
+
+                Result := RevokeGuildInvite(GuildID, CharacterName)
+                switch Result {
+                case 0:
+                        RenderMessage(Context, "Success", "Invitation has been revoked.")
+                case 1:
+                        RenderMessage(Context, "Error", "Character not found or has no invitation.")
+                default:
+                        RenderMessage(Context, "Error", "Failed to revoke invitation.")
+                }
+        } else {
+                NotFound(Context)
+        }
+}
+
+func HandleGuildExpel(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                GuildIDStr := Context.Request.FormValue("guildid")
+                CharacterName := strings.TrimSpace(Context.Request.FormValue("charactername"))
+
+                GuildID, Err := strconv.Atoi(GuildIDStr)
+                if Err != nil || CharacterName == "" {
+                        RenderMessage(Context, "Error", "Invalid guild or character name.")
+                        return
+                }
+
+                if !IsCharacterLeader(Context.AccountID, GuildID) {
+                        RenderMessage(Context, "Error", "Only guild leaders can expel members.")
+                        return
+                }
+
+                Result := ExpelMemberFromGuild(GuildID, CharacterName)
+                switch Result {
+                case 0:
+                        RenderMessage(Context, "Success", fmt.Sprintf("%v has been expelled from the guild.", CharacterName))
+                case 1:
+                        RenderMessage(Context, "Error", "Character not found or not in the guild.")
+                case 2:
+                        RenderMessage(Context, "Error", "Cannot expel the guild leader.")
+                default:
+                        RenderMessage(Context, "Error", "Failed to expel member.")
+                }
+        } else {
+                NotFound(Context)
+        }
 }
 
 func HandleNewsArchive(Context *THttpRequestContext) {
@@ -856,7 +1023,12 @@ func main() {
         Router.Add("GET", "/world", HandleWorld)
         Router.Add("GET", "/house", HandleHouseDetail)
         Router.Add("GET", "/houses", HandleHouses)
+        Router.Add("GET", "/guild/create", HandleGuildCreate)
+        Router.Add("POST", "/guild/create", HandleGuildCreate)
         Router.Add("GET", "/guild", HandleGuildDetail)
+        Router.Add("POST", "/guild/invite", HandleGuildInvite)
+        Router.Add("POST", "/guild/revoke", HandleGuildRevokeInvite)
+        Router.Add("POST", "/guild/expel", HandleGuildExpel)
         Router.Add("GET", "/guilds", HandleGuilds)
         Router.NotFound = NotFound
 

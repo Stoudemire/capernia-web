@@ -1,0 +1,42 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <div class="content-header-text">
+                                <span>Found Guild</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{if .CanCreateGuild}}
+                                <form method="POST" action="/guild/create" style="max-width: 600px; margin: 0 auto;">
+                                        <div style="margin-bottom: 20px;">
+                                                <label style="color: #c9a86a; font-weight: bold; display: block; margin-bottom: 5px;">Guild Name</label>
+                                                <input type="text" name="guildname" required style="width: 100%; padding: 8px; background: #2a2420; color: #e6c98a; border: 1px solid #6b5d4f; box-sizing: border-box; font-family: 'Cinzel', serif;">
+                                        </div>
+                                        
+                                        <div style="margin-bottom: 20px;">
+                                                <label style="color: #c9a86a; font-weight: bold; display: block; margin-bottom: 5px;">Leader Character</label>
+                                                <select name="leadercharacter" required style="width: 100%; padding: 8px; background: #2a2420; color: #e6c98a; border: 1px solid #6b5d4f; box-sizing: border-box; font-family: 'Cinzel', serif;">
+                                                        <option value="">-- Select a character --</option>
+                                                        {{range .Characters}}
+                                                                <option value="{{.Name}}">{{.Name}} (Level {{.Level}})</option>
+                                                        {{end}}
+                                                </select>
+                                        </div>
+
+                                        <div style="text-align: center;">
+                                                <button type="submit" style="background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-family: 'Cinzel', serif;">Create Guild</button>
+                                        </div>
+                                </form>
+                        {{else}}
+                                <p style="text-align: center; color: #c9a86a; margin: 20px 0;">
+                                        {{if not .HasCharacters}}
+                                                You need at least one character to found a guild. <a href="/character/create" style="color: #e6c98a;">Create a character first.</a>
+                                        {{else}}
+                                                Only premium accounts can found guilds. Purchase premium to found a guild.
+                                        {{end}}
+                                </p>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

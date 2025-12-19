@@ -978,3 +978,197 @@ func GetGuildMembers(GuildID int) []TGuildMember {
 
         return members
 }
+
+func CreateGuild(GuildName string, LeaderCharacterName string) int {
+        g_QueryManagerMutex.Lock()
+        defer g_QueryManagerMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return 3
+        }
+
+        var leaderID int
+        err := g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE name = $1
+        `, LeaderCharacterName).Scan(&leaderID)
+        if err != nil {
+                g_LogErr.Printf("Failed to find character: %v", err)
+                return 3
+        }
+
+        var existingGuild int
+        err = g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guilds WHERE name = $1
+        `, GuildName).Scan(&existingGuild)
+        if err == nil && existingGuild > 0 {
+                return 1
+        }
+
+        var existingLeader int
+        err = g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guilds WHERE leaderid = $1
+        `, leaderID).Scan(&existingLeader)
+        if err == nil && existingLeader > 0 {
+                return 2
+        }
+
+        _, err = g_NewsDb.Exec(`
+                INSERT INTO guilds (name, leaderid, created)
+                VALUES ($1, $2, $3)
+        `, GuildName, leaderID, time.Now().Unix())
+        if err != nil {
+                g_LogErr.Printf("Failed to create guild: %v", err)
+                return 3
+        }
+
+        return 0
+}
+
+func GetGuildLeaderCharID(GuildID int) int {
+        if g_NewsDb == nil {
+                return 0
+        }
+        var leaderID int
+        err := g_NewsDb.QueryRow(`
+                SELECT leaderid FROM guilds WHERE guildid = $1
+        `, GuildID).Scan(&leaderID)
+        if err != nil {
+                return 0
+        }
+        return leaderID
+}
+
+func IsCharacterLeader(AccountID int, GuildID int) bool {
+        if g_NewsDb == nil {
+                return false
+        }
+        var count int
+        err := g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guilds g
+                JOIN characters c ON g.leaderid = c.characterid
+                WHERE g.guildid = $1 AND c.accountid = $2
+        `, GuildID, AccountID).Scan(&count)
+        if err != nil {
+                return false
+        }
+        return count > 0
+}
+
+func GetCharacterGuildRank(AccountID int, GuildID int) int {
+        if g_NewsDb == nil {
+                return -1
+        }
+        var rank int
+        var leaderID int
+        err := g_NewsDb.QueryRow(`
+                SELECT leaderid FROM guilds WHERE guildid = $1
+        `, GuildID).Scan(&leaderID)
+        if err != nil {
+                return -1
+        }
+        err = g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE accountid = $1
+        `, AccountID).Scan(&rank)
+        if err != nil {
+                return -1
+        }
+        if rank == leaderID {
+                return 0
+        }
+        err = g_NewsDb.QueryRow(`
+                SELECT rank FROM guildmembers 
+                WHERE characterid = (SELECT characterid FROM characters WHERE accountid = $1)
+                AND guildid = $2
+        `, AccountID, GuildID).Scan(&rank)
+        if err != nil {
+                return -1
+        }
+        return rank
+}
+
+func IsCharacterLeaderOrViceLeader(AccountID int, GuildID int) bool {
+        rank := GetCharacterGuildRank(AccountID, GuildID)
+        return rank == 0 || rank == 1
+}
+
+func InviteCharacterToGuild(GuildID int, CharacterName string) int {
+        if g_NewsDb == nil {
+                return 4
+        }
+        var charID int
+        err := g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE name = $1
+        `, CharacterName).Scan(&charID)
+        if err != nil {
+                return 1
+        }
+        var isMember int
+        err = g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guildmembers WHERE characterid = $1
+        `, charID).Scan(&isMember)
+        if err == nil && isMember > 0 {
+                return 2
+        }
+        var hasInvite int
+        err = g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guildinvites WHERE characterid = $1 AND guildid = $2
+        `, charID, GuildID).Scan(&hasInvite)
+        if err == nil && hasInvite > 0 {
+                return 3
+        }
+        _, err = g_NewsDb.Exec(`
+                INSERT INTO guildinvites (guildid, characterid, recruiterid, timestamp)
+                VALUES ($1, $2, 0, $3)
+        `, GuildID, charID, time.Now().Unix())
+        if err != nil {
+                return 4
+        }
+        return 0
+}
+
+func RevokeGuildInvite(GuildID int, CharacterName string) int {
+        if g_NewsDb == nil {
+                return 1
+        }
+        var charID int
+        err := g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE name = $1
+        `, CharacterName).Scan(&charID)
+        if err != nil {
+                return 1
+        }
+        _, err = g_NewsDb.Exec(`
+                DELETE FROM guildinvites WHERE guildid = $1 AND characterid = $2
+        `, GuildID, charID)
+        if err != nil {
+                return 1
+        }
+        return 0
+}
+
+func ExpelMemberFromGuild(GuildID int, CharacterName string) int {
+        if g_NewsDb == nil {
+                return 2
+        }
+        var charID int
+        var leaderID int
+        err := g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE name = $1
+        `, CharacterName).Scan(&charID)
+        if err != nil {
+                return 1
+        }
+        err = g_NewsDb.QueryRow(`
+                SELECT leaderid FROM guilds WHERE guildid = $1
+        `, GuildID).Scan(&leaderID)
+        if err == nil && leaderID == charID {
+                return 2
+        }
+        _, err = g_NewsDb.Exec(`
+                DELETE FROM guildmembers WHERE guildid = $1 AND characterid = $2
+        `, GuildID, charID)
+        if err != nil {
+                return 2
+        }
+        return 0
+}

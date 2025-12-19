@@ -1,0 +1,25 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-cogs"></i>
+                        <div class="content-header-text">
+                                <span>Manage Guild</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <h3 style="color: #c9a86a; margin-bottom: 20px;">{{.Title}}</h3>
+                        
+                        <form method="POST" action="{{.Action}}" style="max-width: 500px;">
+                                <input type="hidden" name="guildid" value="{{.GuildID}}">
+                                <div style="margin-bottom: 20px;">
+                                        <label style="color: #c9a86a; font-weight: bold; display: block; margin-bottom: 5px;">Character Name</label>
+                                        <input type="text" name="charactername" required style="width: 100%; padding: 8px; background: #2a2420; color: #e6c98a; border: 1px solid #6b5d4f; box-sizing: border-box; font-family: 'Cinzel', serif;">
+                                </div>
+                                
+                                <div style="text-align: center;">
+                                        <button type="submit" style="background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-family: 'Cinzel', serif;">{{.ButtonText}}</button>
+                                </div>
+                        </form>
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

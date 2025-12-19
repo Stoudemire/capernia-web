@@ -160,9 +160,19 @@ type (
         }
 
         GuildDetailTmplData struct {
-                Common  CommonTmplData
-                Guild   *TGuild
-                Members []TGuildMember
+                Common        CommonTmplData
+                Guild         *TGuild
+                Members       []TGuildMember
+                IsLeader      bool
+                IsViceLeader  bool
+                LeaderCharID  int
+        }
+
+        GuildCreateTmplData struct {
+                Common         CommonTmplData
+                CanCreateGuild bool
+                HasCharacters  bool
+                Characters     []TCharacterSummary
         }
 )
 
@@ -563,11 +573,32 @@ func RenderGuilds(Context *THttpRequestContext, Guilds []TGuild) {
                 })
 }
 
-func RenderGuildDetail(Context *THttpRequestContext, Guild *TGuild, Members []TGuildMember) {
+func RenderGuildDetail(Context *THttpRequestContext, Guild *TGuild, Members []TGuildMember, IsLeader bool, IsViceLeader bool, LeaderCharID int) {
         ExecuteTemplate(Context.Writer, "guild_detail.tmpl",
                 GuildDetailTmplData{
-                        Common: GetCommonTmplData("Guild", Context.AccountID),
-                        Guild: Guild,
-                        Members: Members,
+                        Common:       GetCommonTmplData("Guild", Context.AccountID),
+                        Guild:        Guild,
+                        Members:      Members,
+                        IsLeader:     IsLeader,
+                        IsViceLeader: IsViceLeader,
+                        LeaderCharID: LeaderCharID,
+                })
+}
+
+func RenderGuildCreate(Context *THttpRequestContext, Account *TAccountSummary) {
+        Characters := []TCharacterSummary{}
+        if Account != nil {
+                Characters = Account.Characters
+        }
+
+        CanCreate := Account != nil && Account.PremiumDays > 0 && len(Characters) > 0
+        HasCharacters := len(Characters) > 0
+
+        ExecuteTemplate(Context.Writer, "guild_create.tmpl",
+                GuildCreateTmplData{
+                        Common:         GetCommonTmplData("Found Guild", Context.AccountID),
+                        CanCreateGuild: CanCreate,
+                        HasCharacters:  HasCharacters,
+                        Characters:     Characters,
                 })
 }
