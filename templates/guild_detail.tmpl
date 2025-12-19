@@ -13,12 +13,14 @@
                                 {{if .Guild.Description}}
                                 <p style="text-align: left; margin-bottom: 5px; font-style: italic; color: #a89780;">{{.Guild.Description}}</p>
                                 {{end}}
-                                <p style="text-align: left; margin-bottom: 20px; color: #c9a86a;"><strong>It is currently active.</strong></p>
                                 
-                                <div style="border-top: 2px solid #3d2817; padding-top: 15px; margin-bottom: 20px;">
-                                        <p style="margin: 5px 0;">The guild was founded on {{.Guild.Created | FormatTimestamp}}.</p>
-                                        <p style="margin: 5px 0;">Members: {{.Guild.MemberCount}}</p>
-                                </div>
+                                <p style="text-align: left; margin-bottom: 5px;">The guild was founded on {{.Guild.Created | FormatTimestamp}}.</p>
+                                <p style="text-align: left; margin-bottom: 5px;">It is currently active.</p>
+                                
+                                {{if .Guild.GuildHouseID}}
+                                <p style="text-align: left; margin-bottom: 20px;">Their home is <a href="/house?id={{.Guild.GuildHouseID}}" style="color: #c9a86a; text-decoration: none;">linked to this guild house</a>.</p>
+                                {{end}}
+                                
                                 <br>
                                 {{if .Members}}
                                 <h3 style="margin-top: 30px; margin-bottom: 15px; color: #c9a86a;">Guild Members</h3>

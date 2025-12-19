@@ -135,12 +135,13 @@ type (
         }
 
         TGuild struct {
-                GuildID     int
-                Name        string
-                Description string
-                Leader      string
-                Created     int
-                MemberCount int
+                GuildID      int
+                Name         string
+                Description  string
+                Leader       string
+                Created      int
+                MemberCount  int
+                GuildHouseID int
         }
 
         TGuildMember struct {

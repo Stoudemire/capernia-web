@@ -778,6 +778,22 @@ func GetHouse(HouseID int) *THouse {
         return nil
 }
 
+func GetGuildHouseID(OwnerCharacterID int) int {
+        if g_NewsDb == nil {
+                return 0
+        }
+
+        var houseID int
+        err := g_NewsDb.QueryRow(`
+                SELECT houseid FROM houses WHERE owner = $1 AND guildhouse = true LIMIT 1
+        `, OwnerCharacterID).Scan(&houseID)
+        if err != nil {
+                // No guild house found
+                return 0
+        }
+        return houseID
+}
+
 func GetTowns() []string {
         towns := []string{
                 "Ab'Dendriel",
@@ -825,6 +841,10 @@ func GetGuilds() []TGuild {
                 
                 // Get leader name from Characters
                 guild.Leader = GetCharacterNameByID(leaderID)
+                
+                // Get guild house (owned by the leader)
+                guild.GuildHouseID = GetGuildHouseID(leaderID)
+                
                 guilds = append(guilds, guild)
         }
 
@@ -871,6 +891,10 @@ func GetGuild(GuildID int) *TGuild {
         }
 
         guild.Leader = GetCharacterNameByID(leaderID)
+        
+        // Get guild house (owned by the leader)
+        guild.GuildHouseID = GetGuildHouseID(leaderID)
+        
         return &guild
 }
 
