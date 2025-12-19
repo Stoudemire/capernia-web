@@ -16,9 +16,8 @@
                                 <p style="text-align: left; margin-bottom: 20px; color: #c9a86a;"><strong>It is currently active.</strong></p>
                                 
                                 <div style="border-top: 2px solid #3d2817; padding-top: 15px; margin-bottom: 20px;">
-                                        <p><strong>Leader:</strong> {{.Guild.Leader}}</p>
-                                        <p><strong>Members:</strong> {{.Guild.MemberCount}}</p>
-                                        <p><strong>Founded:</strong> {{.Guild.Created | FormatTimestamp}}</p>
+                                        <p style="margin: 5px 0;">The guild was founded on {{.Guild.Created | FormatTimestamp}}.</p>
+                                        <p style="margin: 5px 0;">Members: {{.Guild.MemberCount}}</p>
                                 </div>
                                 <br>
                                 {{if .Members}}

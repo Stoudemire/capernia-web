@@ -8,30 +8,22 @@
                 </div>
                 <div class="content-body">
                         {{if .Guilds}}
-                                <table style="width: 100%; margin-top: 20px;">
-                                        <tr style="border-bottom: 2px solid #3d2817;">
-                                                <th style="padding: 10px; text-align: left;">#</th>
-                                                <th style="padding: 10px; text-align: left;">Name</th>
-                                                <th style="padding: 10px; text-align: left;">Leader</th>
-                                                <th style="padding: 10px; text-align: left;">Members</th>
-                                                <th style="padding: 10px; text-align: left;">Created</th>
-                                        </tr>
+                                <table width="100%" class="guilds-table" style="border-spacing: 0; margin-top: 20px;">
+                                        <tbody>
                                         {{range $idx, $guild := .Guilds}}
-                                                <tr style="border-bottom: 1px solid #3d2817;">
-                                                        <td style="padding: 10px;">{{.GuildID}}</td>
-                                                        <td style="padding: 10px;"><a href="/guild?id={{.GuildID}}" style="color: #c9a86a; text-decoration: none;">{{.Name}}</a></td>
-                                                        <td style="padding: 10px;">{{.Leader}}</td>
-                                                        <td style="padding: 10px;">{{.MemberCount}}</td>
-                                                        <td style="padding: 10px;">{{.Created | FormatTimestamp}}</td>
-                                                </tr>
-                                                {{if .Description}}
-                                                <tr style="border-bottom: 1px solid #3d2817; background-color: rgba(61, 40, 23, 0.3);">
-                                                        <td colspan="5" style="padding: 10px; text-align: left; color: #a0826d; font-size: 0.9em;">
-                                                                {{.Description}}
+                                                <tr>
+                                                        <td valign="top" style="width: 100%; padding: 15px; box-sizing: border-box; border-bottom: 1px solid #d4c0a1;">
+                                                                <a href="/guild?id={{.GuildID}}" style="color: #c9a86a; text-decoration: none; font-size: 1.2em; font-weight: bold;">{{.Name}}</a><br>
+                                                                <br>
+                                                                {{if .Description}}
+                                                                        {{.Description}}
+                                                                {{else}}
+                                                                        This guild has no description.
+                                                                {{end}}
                                                         </td>
                                                 </tr>
-                                                {{end}}
                                         {{end}}
+                                        </tbody>
                                 </table>
                         {{else}}
                                 <p style="text-align: center; margin-top: 20px;">No guilds available.</p>
