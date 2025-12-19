@@ -24,6 +24,13 @@
                                                         <td style="padding: 10px;">{{.MemberCount}}</td>
                                                         <td style="padding: 10px;">{{.Created | FormatTimestamp}}</td>
                                                 </tr>
+                                                {{if .Description}}
+                                                <tr style="border-bottom: 1px solid #3d2817; background-color: rgba(61, 40, 23, 0.3);">
+                                                        <td colspan="5" style="padding: 10px; text-align: left; color: #a0826d; font-size: 0.9em;">
+                                                                {{.Description}}
+                                                        </td>
+                                                </tr>
+                                                {{end}}
                                         {{end}}
                                 </table>
                         {{else}}

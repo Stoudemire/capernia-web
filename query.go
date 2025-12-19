@@ -800,12 +800,12 @@ func GetGuilds() []TGuild {
         }
 
         rows, err := g_NewsDb.Query(`
-                SELECT g.GuildID, g.Name, g.Description, g.LeaderID, g.Created,
-                       COUNT(gm.CharacterID) as MemberCount
-                FROM Guilds g
-                LEFT JOIN GuildMembers gm ON g.GuildID = gm.GuildID
-                GROUP BY g.GuildID, g.Name, g.Description, g.LeaderID, g.Created
-                ORDER BY g.Name ASC
+                SELECT g.guildid, g.name, COALESCE(g.description, ''), g.leaderid, g.created,
+                       COUNT(gm.characterid) as member_count
+                FROM guilds g
+                LEFT JOIN guildmembers gm ON g.guildid = gm.guildid
+                GROUP BY g.guildid, g.name, g.description, g.leaderid, g.created
+                ORDER BY g.name ASC
         `)
         if err != nil {
                 g_LogErr.Printf("Failed to query guilds: %v", err)
@@ -817,15 +817,10 @@ func GetGuilds() []TGuild {
         for rows.Next() {
                 var guild TGuild
                 var leaderID int
-                var description sql.NullString
-                err := rows.Scan(&guild.GuildID, &guild.Name, &description, &leaderID, &guild.Created, &guild.MemberCount)
+                err := rows.Scan(&guild.GuildID, &guild.Name, &guild.Description, &leaderID, &guild.Created, &guild.MemberCount)
                 if err != nil {
                         g_LogErr.Printf("Failed to scan guild row: %v", err)
                         continue
-                }
-                
-                if description.Valid {
-                        guild.Description = description.String
                 }
                 
                 // Get leader name from Characters
@@ -843,7 +838,7 @@ func GetCharacterNameByID(CharacterID int) string {
 
         var name string
         err := g_NewsDb.QueryRow(`
-                SELECT Name FROM Characters WHERE CharacterID = $1
+                SELECT name FROM characters WHERE characterid = $1
         `, CharacterID).Scan(&name)
         if err != nil {
                 // Try demo mode - just return a placeholder
@@ -862,22 +857,17 @@ func GetGuild(GuildID int) *TGuild {
 
         var guild TGuild
         var leaderID int
-        var description sql.NullString
         err := g_NewsDb.QueryRow(`
-                SELECT g.GuildID, g.Name, g.Description, g.LeaderID, g.Created,
-                       COUNT(gm.CharacterID) as MemberCount
-                FROM Guilds g
-                LEFT JOIN GuildMembers gm ON g.GuildID = gm.GuildID
-                WHERE g.GuildID = $1
-                GROUP BY g.GuildID, g.Name, g.Description, g.LeaderID, g.Created
-        `, GuildID).Scan(&guild.GuildID, &guild.Name, &description, &leaderID, &guild.Created, &guild.MemberCount)
+                SELECT g.guildid, g.name, COALESCE(g.description, ''), g.leaderid, g.created,
+                       COUNT(gm.characterid) as member_count
+                FROM guilds g
+                LEFT JOIN guildmembers gm ON g.guildid = gm.guildid
+                WHERE g.guildid = $1
+                GROUP BY g.guildid, g.name, g.description, g.leaderid, g.created
+        `, GuildID).Scan(&guild.GuildID, &guild.Name, &guild.Description, &leaderID, &guild.Created, &guild.MemberCount)
         if err != nil {
                 g_LogErr.Printf("Failed to query guild: %v", err)
                 return nil
-        }
-
-        if description.Valid {
-                guild.Description = description.String
         }
 
         guild.Leader = GetCharacterNameByID(leaderID)
@@ -906,12 +896,12 @@ func GetGuildMembers(GuildID int) []TGuildMember {
         }
 
         rows, err := g_NewsDb.Query(`
-                SELECT gm.CharacterID, gm.Rank, gm.Title, gm.Joined, gm.Status,
-                       c.Name, c.Level, c.Profession
-                FROM GuildMembers gm
-                LEFT JOIN Characters c ON gm.CharacterID = c.CharacterID
-                WHERE gm.GuildID = $1
-                ORDER BY gm.Rank ASC, c.Level DESC
+                SELECT gm.characterid, gm.rank, COALESCE(gm.title, ''), gm.joined, gm.status,
+                       c.name, c.level, c.profession
+                FROM guildmembers gm
+                LEFT JOIN characters c ON gm.characterid = c.characterid
+                WHERE gm.guildid = $1
+                ORDER BY gm.rank ASC, c.level DESC
         `, GuildID)
         if err != nil {
                 g_LogErr.Printf("Failed to query guild members: %v", err)
