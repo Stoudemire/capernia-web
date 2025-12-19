@@ -569,6 +569,109 @@ func HandleWorld(Context *THttpRequestContext) {
         }
 }
 
+func HandleNews(Context *THttpRequestContext) {
+        RenderNews(Context)
+}
+
+func HandleAdminNews(Context *THttpRequestContext) {
+        RenderAdminNews(Context)
+}
+
+func HandleAdminNewsCreate(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                title := Context.Request.FormValue("title")
+                content := Context.Request.FormValue("content")
+
+                if title == "" || content == "" {
+                        RenderMessage(Context, "Error", "Title and content are required.")
+                        return
+                }
+
+                _, err := CreateNews(title, content)
+                if err != nil {
+                        RenderMessage(Context, "Error", "Failed to create news.")
+                        return
+                }
+
+                Redirect(Context, "/admin/news")
+        } else {
+                NotFound(Context)
+        }
+}
+
+func HandleAdminNewsEdit(Context *THttpRequestContext) {
+        if len(Context.Params) == 0 {
+                NotFound(Context)
+                return
+        }
+
+        newsID, err := strconv.Atoi(Context.Params[0])
+        if err != nil {
+                BadRequest(Context)
+                return
+        }
+
+        RenderAdminNewsEdit(Context, newsID)
+}
+
+func HandleAdminNewsUpdate(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                if len(Context.Params) == 0 {
+                        NotFound(Context)
+                        return
+                }
+
+                newsID, err := strconv.Atoi(Context.Params[0])
+                if err != nil {
+                        BadRequest(Context)
+                        return
+                }
+
+                title := Context.Request.FormValue("title")
+                content := Context.Request.FormValue("content")
+
+                if title == "" || content == "" {
+                        RenderMessage(Context, "Error", "Title and content are required.")
+                        return
+                }
+
+                err = UpdateNews(newsID, title, content)
+                if err != nil {
+                        RenderMessage(Context, "Error", "Failed to update news.")
+                        return
+                }
+
+                Redirect(Context, "/admin/news")
+        } else {
+                NotFound(Context)
+        }
+}
+
+func HandleAdminNewsDelete(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                if len(Context.Params) == 0 {
+                        NotFound(Context)
+                        return
+                }
+
+                newsID, err := strconv.Atoi(Context.Params[0])
+                if err != nil {
+                        BadRequest(Context)
+                        return
+                }
+
+                err = DeleteNews(newsID)
+                if err != nil {
+                        RenderMessage(Context, "Error", "Failed to delete news.")
+                        return
+                }
+
+                Redirect(Context, "/admin/news")
+        } else {
+                NotFound(Context)
+        }
+}
+
 func main() {
         g_Log.Print("Tibia Web Server v0.2")
         if !ReadConfig("config.cfg", WebKVCallback) {
@@ -578,7 +681,8 @@ func main() {
         defer ExitQuery()
         defer ExitMail()
         defer ExitTemplates()
-        if !InitQuery() || !InitMail() || !InitTemplates() {
+        defer ExitNews()
+        if !InitQuery() || !InitMail() || !InitTemplates() || !InitNews() {
                 return
         }
 
@@ -587,6 +691,12 @@ func main() {
         Router.Add("GET", "/favicon.ico", HandleFavicon)
         Router.Add("GET", "/", HandleIndex)
         Router.Add("GET", "/index", HandleIndex)
+        Router.Add("GET", "/news", HandleNews)
+        Router.Add("GET", "/admin/news", HandleAdminNews)
+        Router.Add("POST", "/admin/news/create", HandleAdminNewsCreate)
+        Router.Add("GET", "/admin/news/edit/", HandleAdminNewsEdit)
+        Router.Add("POST", "/admin/news/update/", HandleAdminNewsUpdate)
+        Router.Add("POST", "/admin/news/delete/", HandleAdminNewsDelete)
         Router.Add("GET", "/account", HandleAccount)
         Router.Add("POST", "/account", HandleAccount)
         Router.Add("GET", "/account/logout", HandleAccountLogout)

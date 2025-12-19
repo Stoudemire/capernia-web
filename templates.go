@@ -22,6 +22,17 @@ type (
                 Common CommonTmplData
         }
 
+        NewsTmplData struct {
+                Common CommonTmplData
+                NewsList []TNews
+        }
+
+        AdminNewsTmplData struct {
+                Common CommonTmplData
+                NewsList []TNews
+                EditingNews *TNews
+        }
+
         AccountTmplData struct {
                 Common  CommonTmplData
                 Account *TAccountSummary
@@ -241,18 +252,6 @@ func RenderWorldInfo(Context *THttpRequestContext, WorldName string) {
 }
 
 func RenderHighscores(Context *THttpRequestContext, Skill string, Vocation string) {
-        skillNames := map[string]string{
-                "level": "Level",
-                "magic": "Magic Level",
-                "fist": "Fist Fighting Level",
-                "club": "Club Fighting Level",
-                "sword": "Sword Fighting Level",
-                "axe": "Axe Fighting Level",
-                "distance": "Distance Fighting Level",
-                "shielding": "Shielding Level",
-                "fishing": "Fishing Level",
-        }
-        
         skillDisplay := map[string]string{
                 "level": "Level",
                 "magic": "Magic",
@@ -265,11 +264,7 @@ func RenderHighscores(Context *THttpRequestContext, Skill string, Vocation strin
                 "fishing": "Fishing",
         }
         
-        skillName := "Level"
         skillDisp := "Level"
-        if name, ok := skillNames[Skill]; ok {
-                skillName = name
-        }
         if disp, ok := skillDisplay[Skill]; ok {
                 skillDisp = disp
         }
@@ -279,8 +274,56 @@ func RenderHighscores(Context *THttpRequestContext, Skill string, Vocation strin
                         Common: GetCommonTmplData("Highscores", Context.AccountID),
                         Highscores:        GetHighscores(Skill, Vocation),
                         CurrentSkill:      Skill,
-                        CurrentSkillName:  skillName,
                         CurrentSkillDisplay: skillDisp,
                         CurrentVocation:   Vocation,
+                })
+}
+
+func RenderNews(Context *THttpRequestContext) {
+        news, err := GetAllNews()
+        if err != nil {
+                g_LogErr.Printf("Failed to get news: %v", err)
+                news = []TNews{}
+        }
+
+        ExecuteTemplate(Context.Writer, "news.tmpl",
+                NewsTmplData{
+                        Common: GetCommonTmplData("News", Context.AccountID),
+                        NewsList: news,
+                })
+}
+
+func RenderAdminNews(Context *THttpRequestContext) {
+        news, err := GetAllNews()
+        if err != nil {
+                g_LogErr.Printf("Failed to get news: %v", err)
+                news = []TNews{}
+        }
+
+        ExecuteTemplate(Context.Writer, "admin_news.tmpl",
+                AdminNewsTmplData{
+                        Common: GetCommonTmplData("Admin News", Context.AccountID),
+                        NewsList: news,
+                        EditingNews: nil,
+                })
+}
+
+func RenderAdminNewsEdit(Context *THttpRequestContext, newsID int) {
+        news, err := GetAllNews()
+        if err != nil {
+                g_LogErr.Printf("Failed to get news: %v", err)
+                news = []TNews{}
+        }
+
+        editingNews, err := GetNewsById(newsID)
+        if err != nil {
+                g_LogErr.Printf("Failed to get news by id: %v", err)
+        }
+
+        ExecuteTemplate(Context.Writer, "admin_news.tmpl",
+                AdminNewsTmplData{
+                        Common: GetCommonTmplData("Admin News", Context.AccountID),
+                        NewsList: news,
+                        EditingNews: editingNews,
                 })
 }

@@ -10,7 +10,7 @@
                         <form method="GET" style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                         <label for="skill" style="margin: 0; white-space: nowrap;">Skill:</label>
-                                        <select id="skill" name="skill" style="padding: 0.5rem; background: rgba(0,0,0,.3); border: 1px solid #555; color: #BBB; border-radius: 4px; min-width: 180px;">
+                                        <select id="skill" name="skill" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; min-width: 180px;">
                                                 <option value="">-- All Skills --</option>
                                                 <option value="level" {{if eq .CurrentSkill "level"}}selected{{end}}>Level</option>
                                                 <option value="magic" {{if eq .CurrentSkill "magic"}}selected{{end}}>Magic</option>
@@ -25,7 +25,7 @@
                                 </div>
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                         <label for="vocation" style="margin: 0; white-space: nowrap;">Vocation:</label>
-                                        <select id="vocation" name="vocation" style="padding: 0.5rem; background: rgba(0,0,0,.3); border: 1px solid #555; color: #BBB; border-radius: 4px; min-width: 180px;">
+                                        <select id="vocation" name="vocation" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; min-width: 180px;">
                                                 <option value="">-- All Vocations --</option>
                                                 <option value="sorcerer" {{if eq .CurrentVocation "sorcerer"}}selected{{end}}>Sorcerer</option>
                                                 <option value="druid" {{if eq .CurrentVocation "druid"}}selected{{end}}>Druid</option>
@@ -41,7 +41,7 @@
                                         <th style="width: 60px;">#</th>
                                         <th>Name</th>
                                         <th>Vocation</th>
-                                        <th>{{if .CurrentSkill}}{{.CurrentSkillDisplay}}{{else}}Level{{end}}</th>
+                                        <th>{{.CurrentSkillDisplay}}</th>
                                 </tr>
                                 {{if .Highscores}}
                                         {{range $index, $hs := .Highscores}}

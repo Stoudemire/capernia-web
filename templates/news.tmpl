@@ -1,0 +1,30 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-book"></i>
+                        <div class="content-header-text">
+                                <span>Latest News</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{if .NewsList}}
+                                {{range .NewsList}}
+                                <div class="content-card" style="margin-bottom: 1.5rem;">
+                                        <div class="content-header">
+                                                <i class="fas fa-book"></i>
+                                                <div class="content-header-text">
+                                                        <span>{{.Title}}</span>
+                                                        <span class="content-header-date">{{.CreatedAt.Format "January 2, 2006"}}</span>
+                                                </div>
+                                        </div>
+                                        <div class="content-body">
+                                                <p>{{.Content}}</p>
+                                        </div>
+                                </div>
+                                {{end}}
+                        {{else}}
+                                <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No news available yet.</p>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}
