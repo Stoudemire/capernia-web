@@ -25,12 +25,18 @@ type (
         NewsTmplData struct {
                 Common CommonTmplData
                 NewsList []TNews
+                CurrentPage int
+                TotalPages int
+                TotalNews int
         }
 
         AdminNewsTmplData struct {
                 Common CommonTmplData
                 NewsList []TNews
                 EditingNews *TNews
+                CurrentPage int
+                TotalPages int
+                TotalNews int
         }
 
         AccountTmplData struct {
@@ -95,6 +101,14 @@ func InitTemplates() bool {
                 "FormatTimestamp": FormatTimestamp,
                 "FormatDurationSince": FormatDurationSince,
                 "add": func(a, b int) int { return a + b },
+                "sub": func(a, b int) int { return a - b },
+                "until": func(n int) []int {
+                        result := make([]int, n)
+                        for i := 0; i < n; i++ {
+                                result[i] = i
+                        }
+                        return result
+                },
                 "title": strings.Title,
                 "HTML": func(s string) template.HTML { return template.HTML(s) },
         }
@@ -281,24 +295,69 @@ func RenderHighscores(Context *THttpRequestContext, Skill string, Vocation strin
 }
 
 func RenderNews(Context *THttpRequestContext) {
-        news, err := GetAllNews()
+        pageStr := Context.Request.URL.Query().Get("page")
+        page := 1
+        if pageStr != "" {
+                p, err := strconv.Atoi(pageStr)
+                if err == nil && p > 0 {
+                        page = p
+                }
+        }
+
+        itemsPerPage := 3
+        news, err := GetNewsPaginated(page, itemsPerPage)
         if err != nil {
                 g_LogErr.Printf("Failed to get news: %v", err)
                 news = []TNews{}
+        }
+
+        totalNews, err := GetTotalNewsCount()
+        if err != nil {
+                g_LogErr.Printf("Failed to get total news count: %v", err)
+                totalNews = 0
+        }
+
+        totalPages := (totalNews + itemsPerPage - 1) / itemsPerPage
+        if totalPages < 1 {
+                totalPages = 1
         }
 
         ExecuteTemplate(Context.Writer, "news.tmpl",
                 NewsTmplData{
                         Common: GetCommonTmplData("News", Context.AccountID),
                         NewsList: news,
+                        CurrentPage: page,
+                        TotalPages: totalPages,
+                        TotalNews: totalNews,
                 })
 }
 
 func RenderAdminNews(Context *THttpRequestContext) {
-        news, err := GetAllNews()
+        pageStr := Context.Request.URL.Query().Get("page")
+        page := 1
+        if pageStr != "" {
+                p, err := strconv.Atoi(pageStr)
+                if err == nil && p > 0 {
+                        page = p
+                }
+        }
+
+        itemsPerPage := 3
+        news, err := GetNewsPaginated(page, itemsPerPage)
         if err != nil {
                 g_LogErr.Printf("Failed to get news: %v", err)
                 news = []TNews{}
+        }
+
+        totalNews, err := GetTotalNewsCount()
+        if err != nil {
+                g_LogErr.Printf("Failed to get total news count: %v", err)
+                totalNews = 0
+        }
+
+        totalPages := (totalNews + itemsPerPage - 1) / itemsPerPage
+        if totalPages < 1 {
+                totalPages = 1
         }
 
         ExecuteTemplate(Context.Writer, "admin_news.tmpl",
@@ -306,14 +365,38 @@ func RenderAdminNews(Context *THttpRequestContext) {
                         Common: GetCommonTmplData("Admin News", Context.AccountID),
                         NewsList: news,
                         EditingNews: nil,
+                        CurrentPage: page,
+                        TotalPages: totalPages,
+                        TotalNews: totalNews,
                 })
 }
 
 func RenderAdminNewsEdit(Context *THttpRequestContext, newsID int) {
-        news, err := GetAllNews()
+        pageStr := Context.Request.URL.Query().Get("page")
+        page := 1
+        if pageStr != "" {
+                p, err := strconv.Atoi(pageStr)
+                if err == nil && p > 0 {
+                        page = p
+                }
+        }
+
+        itemsPerPage := 3
+        news, err := GetNewsPaginated(page, itemsPerPage)
         if err != nil {
                 g_LogErr.Printf("Failed to get news: %v", err)
                 news = []TNews{}
+        }
+
+        totalNews, err := GetTotalNewsCount()
+        if err != nil {
+                g_LogErr.Printf("Failed to get total news count: %v", err)
+                totalNews = 0
+        }
+
+        totalPages := (totalNews + itemsPerPage - 1) / itemsPerPage
+        if totalPages < 1 {
+                totalPages = 1
         }
 
         editingNews, err := GetNewsById(newsID)
@@ -326,5 +409,8 @@ func RenderAdminNewsEdit(Context *THttpRequestContext, newsID int) {
                         Common: GetCommonTmplData("Admin News", Context.AccountID),
                         NewsList: news,
                         EditingNews: editingNews,
+                        CurrentPage: page,
+                        TotalPages: totalPages,
+                        TotalNews: totalNews,
                 })
 }
