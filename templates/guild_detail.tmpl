@@ -8,28 +8,38 @@
                 </div>
                 <div class="content-body">
                         {{if .Guild}}
-                                <h2 style="margin-bottom: 20px;">{{.Guild.Name}}</h2>
-                                <p><strong>Leader:</strong> {{.Guild.Leader}}</p>
-                                <p><strong>Members:</strong> {{.Guild.MemberCount}}</p>
-                                <p><strong>Founded:</strong> {{.Guild.Created | FormatTimestamp}}</p>
+                                <h2 style="text-align: center; margin-bottom: 30px; font-size: 2.5em; color: #c9a86a;">{{.Guild.Name}}</h2>
+                                
+                                {{if .Guild.Description}}
+                                <p style="text-align: right; margin-bottom: 5px; font-style: italic; color: #a89780;">{{.Guild.Description}}</p>
+                                {{end}}
+                                <p style="text-align: right; margin-bottom: 20px; color: #c9a86a;"><strong>It is currently active.</strong></p>
+                                
+                                <div style="border-top: 2px solid #3d2817; padding-top: 15px; margin-bottom: 20px;">
+                                        <p><strong>Leader:</strong> {{.Guild.Leader}}</p>
+                                        <p><strong>Members:</strong> {{.Guild.MemberCount}}</p>
+                                        <p><strong>Founded:</strong> {{.Guild.Created | FormatTimestamp}}</p>
+                                </div>
                                 <br>
                                 {{if .Members}}
                                 <h3 style="margin-top: 30px; margin-bottom: 15px; color: #c9a86a;">Guild Members</h3>
                                 <table style="width: 100%;">
                                         <tr style="border-bottom: 2px solid #3d2817;">
-                                                <th style="padding: 10px; text-align: left;">Name</th>
                                                 <th style="padding: 10px; text-align: left;">Rank</th>
-                                                <th style="padding: 10px; text-align: left;">Title</th>
-                                                <th style="padding: 10px; text-align: left;">Level</th>
+                                                <th style="padding: 10px; text-align: left;">Name (Title)</th>
                                                 <th style="padding: 10px; text-align: left;">Vocation</th>
+                                                <th style="padding: 10px; text-align: left;">Level</th>
+                                                <th style="padding: 10px; text-align: left;">Joining Date</th>
+                                                <th style="padding: 10px; text-align: left;">Status</th>
                                         </tr>
                                         {{range .Members}}
                                                 <tr style="border-bottom: 1px solid #3d2817;">
-                                                        <td style="padding: 10px;">{{.CharacterName}}</td>
                                                         <td style="padding: 10px;">{{.Rank}}</td>
-                                                        <td style="padding: 10px;">{{.Title}}</td>
-                                                        <td style="padding: 10px;">{{.Level}}</td>
+                                                        <td style="padding: 10px;">{{.CharacterName}}{{if .Title}} ({{.Title}}){{end}}</td>
                                                         <td style="padding: 10px;">{{.Profession}}</td>
+                                                        <td style="padding: 10px;">{{.Level}}</td>
+                                                        <td style="padding: 10px;">{{.Joined | FormatTimestamp}}</td>
+                                                        <td style="padding: 10px;">{{.Status}}</td>
                                                 </tr>
                                         {{end}}
                                 </table>

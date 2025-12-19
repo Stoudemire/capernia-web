@@ -1,7 +1,9 @@
 package main
 
 import (
+        "database/sql"
         "encoding/binary"
+        "fmt"
         "net"
         "strings"
         "sync"
@@ -790,18 +792,174 @@ func GetTowns() []string {
 }
 
 func GetGuilds() []TGuild {
-        // TODO: Implement database query for guilds
-        // For now return empty list
-        return []TGuild{}
+        g_QueryManagerMutex.Lock()
+        defer g_QueryManagerMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return []TGuild{}
+        }
+
+        rows, err := g_NewsDb.Query(`
+                SELECT g.GuildID, g.Name, g.Description, g.LeaderID, g.Created,
+                       COUNT(gm.CharacterID) as MemberCount
+                FROM Guilds g
+                LEFT JOIN GuildMembers gm ON g.GuildID = gm.GuildID
+                GROUP BY g.GuildID, g.Name, g.Description, g.LeaderID, g.Created
+                ORDER BY g.Name ASC
+        `)
+        if err != nil {
+                g_LogErr.Printf("Failed to query guilds: %v", err)
+                return []TGuild{}
+        }
+        defer rows.Close()
+
+        var guilds []TGuild
+        for rows.Next() {
+                var guild TGuild
+                var leaderID int
+                var description sql.NullString
+                err := rows.Scan(&guild.GuildID, &guild.Name, &description, &leaderID, &guild.Created, &guild.MemberCount)
+                if err != nil {
+                        g_LogErr.Printf("Failed to scan guild row: %v", err)
+                        continue
+                }
+                
+                if description.Valid {
+                        guild.Description = description.String
+                }
+                
+                // Get leader name from Characters
+                guild.Leader = GetCharacterNameByID(leaderID)
+                guilds = append(guilds, guild)
+        }
+
+        return guilds
+}
+
+func GetCharacterNameByID(CharacterID int) string {
+        if g_NewsDb == nil {
+                return "Unknown"
+        }
+
+        var name string
+        err := g_NewsDb.QueryRow(`
+                SELECT Name FROM Characters WHERE CharacterID = $1
+        `, CharacterID).Scan(&name)
+        if err != nil {
+                // Try demo mode - just return a placeholder
+                return fmt.Sprintf("Leader #%d", CharacterID)
+        }
+        return name
 }
 
 func GetGuild(GuildID int) *TGuild {
-        // TODO: Implement database query for single guild
-        return nil
+        g_QueryManagerMutex.Lock()
+        defer g_QueryManagerMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return nil
+        }
+
+        var guild TGuild
+        var leaderID int
+        var description sql.NullString
+        err := g_NewsDb.QueryRow(`
+                SELECT g.GuildID, g.Name, g.Description, g.LeaderID, g.Created,
+                       COUNT(gm.CharacterID) as MemberCount
+                FROM Guilds g
+                LEFT JOIN GuildMembers gm ON g.GuildID = gm.GuildID
+                WHERE g.GuildID = $1
+                GROUP BY g.GuildID, g.Name, g.Description, g.LeaderID, g.Created
+        `, GuildID).Scan(&guild.GuildID, &guild.Name, &description, &leaderID, &guild.Created, &guild.MemberCount)
+        if err != nil {
+                g_LogErr.Printf("Failed to query guild: %v", err)
+                return nil
+        }
+
+        if description.Valid {
+                guild.Description = description.String
+        }
+
+        guild.Leader = GetCharacterNameByID(leaderID)
+        return &guild
+}
+
+func GetRankName(RankID int) string {
+        switch RankID {
+        case 0:
+                return "Leader"
+        case 1:
+                return "Vice-Leader"
+        case 2:
+                return "Member"
+        default:
+                return "Unknown"
+        }
 }
 
 func GetGuildMembers(GuildID int) []TGuildMember {
-        // TODO: Implement database query for guild members
-        // For now return empty list
-        return []TGuildMember{}
+        g_QueryManagerMutex.Lock()
+        defer g_QueryManagerMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return []TGuildMember{}
+        }
+
+        rows, err := g_NewsDb.Query(`
+                SELECT gm.CharacterID, gm.Rank, gm.Title, gm.Joined, gm.Status,
+                       c.Name, c.Level, c.Profession
+                FROM GuildMembers gm
+                LEFT JOIN Characters c ON gm.CharacterID = c.CharacterID
+                WHERE gm.GuildID = $1
+                ORDER BY gm.Rank ASC, c.Level DESC
+        `, GuildID)
+        if err != nil {
+                g_LogErr.Printf("Failed to query guild members: %v", err)
+                return []TGuildMember{}
+        }
+        defer rows.Close()
+
+        var members []TGuildMember
+        for rows.Next() {
+                var member TGuildMember
+                var characterID int
+                var rankID int
+                var charName sql.NullString
+                var level sql.NullInt64
+                var profession sql.NullString
+                var status sql.NullString
+                
+                err := rows.Scan(&characterID, &rankID, &member.Title, &member.Joined, &status,
+                        &charName, &level, &profession)
+                if err != nil {
+                        g_LogErr.Printf("Failed to scan guild member row: %v", err)
+                        continue
+                }
+
+                member.Rank = GetRankName(rankID)
+                
+                if charName.Valid {
+                        member.CharacterName = charName.String
+                } else {
+                        member.CharacterName = fmt.Sprintf("Character #%d", characterID)
+                }
+                
+                if level.Valid {
+                        member.Level = int(level.Int64)
+                }
+                
+                if profession.Valid {
+                        member.Profession = profession.String
+                }
+
+                if status.Valid {
+                        member.Status = status.String
+                } else {
+                        member.Status = "active"
+                }
+
+                members = append(members, member)
+        }
+
+        return members
 }

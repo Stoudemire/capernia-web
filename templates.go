@@ -135,10 +135,11 @@ type (
         }
 
         TGuild struct {
-                GuildID   int
-                Name      string
-                Leader    string
-                Created   int
+                GuildID     int
+                Name        string
+                Description string
+                Leader      string
+                Created     int
                 MemberCount int
         }
 
@@ -149,6 +150,7 @@ type (
                 Joined        int
                 Level         int
                 Profession    string
+                Status        string
         }
 
         GuildsTmplData struct {
