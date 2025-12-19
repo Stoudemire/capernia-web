@@ -716,7 +716,7 @@ func main() {
         // format the query manager currently handles. Trying to use IPv6 will cause
         // queries to fail.
         if FileExists(g_HttpsCertFile) && FileExists(g_HttpsKeyFile) {
-                Listener, Err := net.Listen("tcp4", JoinHostPort("", g_HttpsPort))
+                Listener, Err := net.Listen("tcp4", JoinHostPort("0.0.0.0", g_HttpsPort))
                 if Err != nil {
                         g_LogErr.Printf("Failed to listen to HTTPS port %v: %v", g_HttpsPort, Err)
                         return
@@ -729,7 +729,7 @@ func main() {
                         " and prone to a man-in-the-middle or eavesdropping attack. This setup" +
                         " may only be used for TESTING.")
 
-                Listener, Err := net.Listen("tcp4", JoinHostPort("", g_HttpPort))
+                Listener, Err := net.Listen("tcp4", JoinHostPort("0.0.0.0", g_HttpPort))
                 if Err != nil {
                         g_LogErr.Printf("Failed to listen to HTTP port %v: %v", g_HttpPort, Err)
                         return

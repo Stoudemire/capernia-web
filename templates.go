@@ -96,6 +96,7 @@ func InitTemplates() bool {
                 "FormatDurationSince": FormatDurationSince,
                 "add": func(a, b int) int { return a + b },
                 "title": strings.Title,
+                "HTML": func(s string) template.HTML { return template.HTML(s) },
         }
 
         g_Templates, Err = template.New("").Funcs(CustomFuncs).ParseGlob("templates/*.tmpl")
