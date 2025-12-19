@@ -16,3 +16,8 @@ tibia-web
 *.out
 vendor/
 go.work
+
+# Replit
+.replit
+replit.nix
+.cache/

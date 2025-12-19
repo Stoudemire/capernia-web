@@ -433,3 +433,10 @@ func RenderAdminNewsEdit(Context *THttpRequestContext, newsID int) {
                         TotalNews: totalNews,
                 })
 }
+
+func RenderDownloadClient(Context *THttpRequestContext) {
+        ExecuteTemplate(Context.Writer, "download_client.tmpl",
+                GenericTmplData{
+                        Common: GetCommonTmplData("Download Client", Context.AccountID),
+                })
+}

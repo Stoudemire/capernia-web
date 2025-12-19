@@ -7,120 +7,39 @@
                         </div>
                 </div>
                 <div class="content-body">
-                        <!-- SEARCH FILTER -->
-                        <div style="background: rgba(0,0,0,.2); border-radius: 8px; border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem;">
-                                <h3 style="color: var(--accent-gold); margin-top: 0; margin-bottom: 1.5rem; font-family: 'Cinzel', serif;">News Archive Search</h3>
-                                <form method="GET" action="/news/archive" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                                        <!-- FROM DATE -->
-                                        <div>
-                                                <label style="color: var(--accent-gold); font-weight: 600; display: block; margin-bottom: 0.75rem; font-family: 'Cinzel', serif;">From:</label>
-                                                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                                                <label style="color: var(--text-muted); font-size: 0.85rem;">Day:</label>
-                                                                <select name="from_day" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; width: 70px;">
-                                                                        {{range $day := until 31}}
-                                                                                <option value="{{add $day 1}}" {{if eq (add $day 1) 19}}selected{{end}}>{{add $day 1}}</option>
-                                                                        {{end}}
-                                                                </select>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                                                <label style="color: var(--text-muted); font-size: 0.85rem;">Month:</label>
-                                                                <select name="from_month" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; width: 70px;">
-                                                                        <option value="1">Jan</option>
-                                                                        <option value="2">Feb</option>
-                                                                        <option value="3">Mar</option>
-                                                                        <option value="4">Apr</option>
-                                                                        <option value="5">May</option>
-                                                                        <option value="6">Jun</option>
-                                                                        <option value="7">Jul</option>
-                                                                        <option value="8">Aug</option>
-                                                                        <option value="9">Sep</option>
-                                                                        <option value="10">Oct</option>
-                                                                        <option value="11" selected>Nov</option>
-                                                                        <option value="12">Dec</option>
-                                                                </select>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                                                <label style="color: var(--text-muted); font-size: 0.85rem;">Year:</label>
-                                                                <input type="number" name="from_year" value="2025" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; width: 70px;">
-                                                        </div>
-                                                </div>
-                                        </div>
-
-                                        <!-- TO DATE -->
-                                        <div>
-                                                <label style="color: var(--accent-gold); font-weight: 600; display: block; margin-bottom: 0.75rem; font-family: 'Cinzel', serif;">To:</label>
-                                                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                                                <label style="color: var(--text-muted); font-size: 0.85rem;">Day:</label>
-                                                                <select name="to_day" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; width: 70px;">
-                                                                        {{range $day := until 31}}
-                                                                                <option value="{{add $day 1}}" {{if eq (add $day 1) 19}}selected{{end}}>{{add $day 1}}</option>
-                                                                        {{end}}
-                                                                </select>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                                                <label style="color: var(--text-muted); font-size: 0.85rem;">Month:</label>
-                                                                <select name="to_month" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; width: 70px;">
-                                                                        <option value="1">Jan</option>
-                                                                        <option value="2">Feb</option>
-                                                                        <option value="3">Mar</option>
-                                                                        <option value="4">Apr</option>
-                                                                        <option value="5">May</option>
-                                                                        <option value="6">Jun</option>
-                                                                        <option value="7">Jul</option>
-                                                                        <option value="8">Aug</option>
-                                                                        <option value="9">Sep</option>
-                                                                        <option value="10">Oct</option>
-                                                                        <option value="11">Nov</option>
-                                                                        <option value="12" selected>Dec</option>
-                                                                </select>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                                                <label style="color: var(--text-muted); font-size: 0.85rem;">Year:</label>
-                                                                <input type="number" name="to_year" value="2025" style="padding: 0.5rem; background: #333333; border: 1px solid #666; color: #FFF; border-radius: 4px; width: 70px;">
-                                                        </div>
-                                                </div>
-                                        </div>
-
-                                        <button type="submit" style="background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; padding: 0.75rem 2rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-family: 'Cinzel', serif; width: fit-content;">Search</button>
-                                </form>
-                        </div>
-
-                        <!-- SEARCH RESULTS -->
                         {{if .HasResults}}
-                        <h3 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-family: 'Cinzel', serif;">Search Results</h3>
-                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                {{range .SearchNews}}
-                                <div style="padding: 1rem; background: rgba(169,152,102,0.1); border-left: 3px solid var(--accent-gold); border-radius: 4px; transition: background 0.2s;">
-                                        <a href="/news/archive/view/{{.ID}}" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none; gap: 1rem;">
-                                                <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;">
-                                                        <i class="fas fa-book" style="color: var(--accent-gold); flex-shrink: 0;"></i>
-                                                        <div style="min-width: 0;">
-                                                                <div style="color: var(--accent-gold); font-weight: 600; font-family: 'Cinzel', serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{.Title}}</div>
-                                                                <div style="color: var(--text-light); font-size: 0.9rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{.Content}}</div>
-                                                        </div>
-                                                </div>
-                                                <span style="color: var(--text-muted); font-size: 0.85rem; flex-shrink: 0; white-space: nowrap;">{{.CreatedAt.Format "Jan 2 2006"}}</span>
-                                        </a>
-                                </div>
-                                {{end}}
-                        </div>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
+                                <thead>
+                                        <tr style="border-bottom: 2px solid var(--accent-gold);">
+                                                <th style="padding: 1rem; text-align: left; color: var(--accent-gold); font-weight: 600; font-family: 'Cinzel', serif; width: 150px;">Date</th>
+                                                <th style="padding: 1rem; text-align: left; color: var(--accent-gold); font-weight: 600; font-family: 'Cinzel', serif;">Title</th>
+                                        </tr>
+                                </thead>
+                                <tbody>
+                                        {{range .SearchNews}}
+                                        <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 1rem; color: var(--text-muted); font-size: 0.9rem; white-space: nowrap;">{{.CreatedAt.Format "Jan 2 2006"}}</td>
+                                                <td style="padding: 1rem;">
+                                                        <a href="/news/archive/view/{{.ID}}" style="color: var(--accent-gold); text-decoration: none; font-weight: 600; font-family: 'Cinzel', serif; transition: all 0.2s; position: relative; display: inline-block;" onmouseover="this.style.textShadow='0 0 10px rgba(230, 201, 138, 0.6)'; this.style.letterSpacing='0.05em';" onmouseout="this.style.textShadow='none'; this.style.letterSpacing='normal';">{{.Title}}</a>
+                                                </td>
+                                        </tr>
+                                        {{end}}
+                                </tbody>
+                        </table>
 
-                        <!-- PAGINATION CONTROLS - Only show if more than 5 articles -->
-                        {{if gt .TotalNews 5}}
+                        {{if gt .TotalPages 1}}
                         <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 2rem; align-items: center; flex-wrap: wrap;">
                                 {{range $page := until .TotalPages}}
                                         {{if eq (add $page 1) $.CurrentPage}}
                                                 <span style="background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; padding: 0.5rem 0.75rem; border: none; border-radius: 4px; font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.9rem; min-width: 2.5rem; text-align: center;">{{add $page 1}}</span>
                                         {{else}}
-                                                <a href="/news/archive?from_day={{$.FromDay}}&from_month={{$.FromMonth}}&from_year={{$.FromYear}}&to_day={{$.ToDay}}&to_month={{$.ToMonth}}&to_year={{$.ToYear}}&page={{add $page 1}}" style="background: rgba(169,152,102,0.2); color: var(--accent-gold); padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; text-decoration: none; font-weight: 600; font-family: 'Cinzel', serif; font-size: 0.9rem; min-width: 2.5rem; text-align: center; transition: all 0.2s;">{{add $page 1}}</a>
+                                                <a href="/news/archive?page={{add $page 1}}" style="background: rgba(169,152,102,0.2); color: var(--accent-gold); padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: 4px; text-decoration: none; font-weight: 600; font-family: 'Cinzel', serif; font-size: 0.9rem; min-width: 2.5rem; text-align: center; transition: all 0.2s;">{{add $page 1}}</a>
                                         {{end}}
                                 {{end}}
                         </div>
                         {{end}}
                         {{else}}
-                        <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No news found in the selected date range.</p>
+                        <p style="text-align: center; color: var(--text-muted); padding: 2rem;">No news found.</p>
                         {{end}}
                 </div>
         </div>

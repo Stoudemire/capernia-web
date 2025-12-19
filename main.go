@@ -573,18 +573,16 @@ func HandleNews(Context *THttpRequestContext) {
         RenderNews(Context)
 }
 
+func HandleDownloadClient(Context *THttpRequestContext) {
+        RenderDownloadClient(Context)
+}
+
 func HandleNewsArchive(Context *THttpRequestContext) {
         if Context.Request.Method != http.MethodGet {
                 NotFound(Context)
                 return
         }
 
-        fromDayStr := Context.Request.URL.Query().Get("from_day")
-        fromMonthStr := Context.Request.URL.Query().Get("from_month")
-        fromYearStr := Context.Request.URL.Query().Get("from_year")
-        toDayStr := Context.Request.URL.Query().Get("to_day")
-        toMonthStr := Context.Request.URL.Query().Get("to_month")
-        toYearStr := Context.Request.URL.Query().Get("to_year")
         pageStr := Context.Request.URL.Query().Get("page")
 
         page := 1
@@ -595,48 +593,25 @@ func HandleNewsArchive(Context *THttpRequestContext) {
                 }
         }
 
+        itemsPerPage := 3
+        news, err := GetNewsPaginated(page, itemsPerPage)
+        
         Data := NewsArchiveTmplData{
                 Common:      GetCommonTmplData("News Archive", Context.AccountID),
-                SearchNews:  []TNews{},
-                HasResults:  false,
+                SearchNews:  news,
+                HasResults:  len(news) > 0,
                 CurrentPage: page,
                 TotalPages:  1,
                 TotalNews:   0,
-                FromDay:     fromDayStr,
-                FromMonth:   fromMonthStr,
-                FromYear:    fromYearStr,
-                ToDay:       toDayStr,
-                ToMonth:     toMonthStr,
-                ToYear:      toYearStr,
         }
 
-        // If search parameters are provided
-        if fromDayStr != "" && fromMonthStr != "" && fromYearStr != "" &&
-           toDayStr != "" && toMonthStr != "" && toYearStr != "" {
-                
-                fromDay := ParseInteger(fromDayStr)
-                fromMonth := ParseInteger(fromMonthStr)
-                fromYear := ParseInteger(fromYearStr)
-                toDay := ParseInteger(toDayStr)
-                toMonth := ParseInteger(toMonthStr)
-                toYear := ParseInteger(toYearStr)
-
-                fromDate := time.Date(fromYear, time.Month(fromMonth), fromDay, 0, 0, 0, 0, time.UTC)
-                toDate := time.Date(toYear, time.Month(toMonth), toDay, 23, 59, 59, 0, time.UTC)
-
-                itemsPerPage := 5
-                news, err := GetNewsByDateRangePaginated(fromDate, toDate, page, itemsPerPage)
-                if err == nil && len(news) > 0 {
-                        Data.SearchNews = news
-                        Data.HasResults = true
-
-                        totalCount, err := GetNewsByDateRangeCount(fromDate, toDate)
-                        if err == nil {
-                                Data.TotalNews = totalCount
-                                Data.TotalPages = (totalCount + itemsPerPage - 1) / itemsPerPage
-                                if Data.TotalPages < 1 {
-                                        Data.TotalPages = 1
-                                }
+        if err == nil {
+                totalCount, err := GetTotalNewsCount()
+                if err == nil {
+                        Data.TotalNews = totalCount
+                        Data.TotalPages = (totalCount + itemsPerPage - 1) / itemsPerPage
+                        if Data.TotalPages < 1 {
+                                Data.TotalPages = 1
                         }
                 }
         }
@@ -784,6 +759,7 @@ func main() {
         Router.Add("GET", "/", HandleIndex)
         Router.Add("GET", "/index", HandleIndex)
         Router.Add("GET", "/news", HandleNews)
+        Router.Add("GET", "/download", HandleDownloadClient)
         Router.Add("GET", "/news/archive", HandleNewsArchive)
         Router.Add("GET", "/news/archive/view/", HandleNewsArchiveView)
         Router.Add("GET", "/admin/news", HandleAdminNews)

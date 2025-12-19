@@ -1,0 +1,102 @@
+{{template "_header.tmpl" .}}
+                <div style="max-width: 900px;">
+                    <!-- TIBIA SERVICE AGREEMENT SECTION -->
+                    <div id="termsSection" style="background: var(--dark-bg); border: 2px solid var(--border-color); border-radius: 8px; padding: 2rem; margin-bottom: 2rem;">
+                        <div class="content-header" style="margin: -2rem -2rem 1.5rem -2rem; border-radius: 6px 6px 0 0;">
+                            <i class="fas fa-file-contract" style="color: var(--accent-gold);"></i>
+                            <div class="content-header-text">
+                                <span>Tibia Service Agreement</span>
+                            </div>
+                        </div>
+
+                        <div style="max-height: 400px; overflow-y: auto; padding-right: 1rem; margin-bottom: 2rem; border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 6px;">
+                            <p style="color: var(--text-light); line-height: 1.8; font-size: 0.95rem;">
+                                <strong>Tibia Service Agreement</strong><br><br>
+                                This agreement describes the terms on which CipSoft GmbH offers you access to an account for being able to play the online role playing game "Tibia". By creating an account or downloading the client software you accept the terms and conditions below and state that you are of full legal age in your country or have the permission of your parents to play this game.<br><br>
+
+                                <strong>Disclaimer of Warranties</strong><br>
+                                You agree that the use of the software is at your sole risk. We provide the software, the game, and all other services "as is". We disclaim all warranties or conditions of any kind, expressed, implied or statutory, including without limitation the implied warranties of title, non-infringement, merchantability and fitness for a particular purpose. We do not ensure continuous, error-free, secure or virus-free operation of the software, the game, or your account.<br><br>
+
+                                <strong>Limitation of Liability</strong><br>
+                                We are not liable for any lost profits or special, incidental or consequential damages arising out of or in connection with the game, including, but not limited to, loss of data, items, accounts, or characters from errors, system downtime, or adjustments of the gameplay.<br><br>
+
+                                <strong>Tibia Rules</strong><br>
+                                While you are playing "Tibia", you must abide by some rules ("Tibia Rules") that are stated on this homepage. If you break any of these rules, your account may be removed and all other services terminated immediately.<br><br>
+
+                                <strong>Dispute Resolution</strong><br>
+                                CipSoft GmbH is neither willing nor required to take part in out-of-court dispute resolution.<br><br>
+
+                                <strong>BattlEye Agreement</strong><br>
+                                By creating an account or downloading the client software, you also accept the terms and conditions stated in the BattlEye End-User Licence Agreement.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <button onclick="acceptTerms()" style="background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; border: none; padding: 0.8rem 2rem; border-radius: 6px; font-weight: 600; font-family: 'Cinzel', serif; font-size: 1rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 15px rgba(230, 201, 138, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                I Agree
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- DOWNLOAD SECTION (HIDDEN BY DEFAULT) -->
+                    <div id="downloadSection" style="display: none; background: var(--dark-bg); border: 2px solid var(--border-color); border-radius: 8px; padding: 2rem;">
+                        <div class="content-header" style="margin: -2rem -2rem 1.5rem -2rem; border-radius: 6px 6px 0 0;">
+                            <i class="fas fa-download" style="color: var(--accent-gold);"></i>
+                            <div class="content-header-text">
+                                <span>Download Tibia Client</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-family: 'Cinzel', serif;">Official Tibia Client</h4>
+                            
+                            <div style="background: rgba(201, 168, 106, 0.1); border: 1px solid var(--border-color); border-radius: 6px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <h5 style="color: var(--text-light); margin-bottom: 1rem; font-family: 'Cinzel', serif;">Windows Client</h5>
+                                <p style="color: var(--text-muted); margin-bottom: 0.8rem; font-size: 0.9rem;">
+                                    <strong>System Requirements:</strong><br>
+                                    • OS: Windows Vista or later<br>
+                                    • RAM: 512 MB minimum<br>
+                                    • Storage: 3 GB available space<br>
+                                    • Internet: Stable broadband connection
+                                </p>
+                                <a href="/res/downloads/tibia-client-windows.zip" style="display: inline-block; background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; text-decoration: none; padding: 0.7rem 1.5rem; border-radius: 6px; font-weight: 600; font-family: 'Cinzel', serif; font-size: 0.95rem; margin-top: 1rem; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 0 15px rgba(230, 201, 138, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                    <i class="fas fa-download" style="margin-right: 0.5rem;"></i>Download Windows Client
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- DISCLAIMER SECTION -->
+                        <div style="background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(230, 201, 138, 0.3); border-radius: 6px; padding: 1.5rem; margin-top: 2rem;">
+                            <h5 style="color: var(--accent-gold); margin-bottom: 1rem; font-family: 'Cinzel', serif;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>Disclaimer
+                            </h5>
+                            <p style="color: var(--text-muted); line-height: 1.8; font-size: 0.9rem; margin: 0;">
+                                The software and any related documentation is provided "as is" without warranty of any kind. The entire risk arising out of use of the software remains with you. In no event shall CipSoft GmbH be liable for any damages to your computer or loss of data.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    function acceptTerms() {
+                        var termsSection = document.getElementById('termsSection');
+                        var downloadSection = document.getElementById('downloadSection');
+                        
+                        // Smooth fade out the terms section
+                        termsSection.style.transition = 'opacity 0.3s ease';
+                        termsSection.style.opacity = '0';
+                        
+                        setTimeout(function() {
+                            termsSection.style.display = 'none';
+                            downloadSection.style.display = 'block';
+                            downloadSection.style.opacity = '0';
+                            downloadSection.style.transition = 'opacity 0.3s ease';
+                            
+                            // Trigger reflow to enable transition
+                            downloadSection.offsetHeight;
+                            downloadSection.style.opacity = '1';
+                        }, 300);
+                    }
+                </script>
+
+{{template "_footer.tmpl" .}}
