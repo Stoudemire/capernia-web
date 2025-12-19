@@ -573,6 +573,98 @@ func HandleNews(Context *THttpRequestContext) {
         RenderNews(Context)
 }
 
+func HandleNewsArchive(Context *THttpRequestContext) {
+        if Context.Request.Method != http.MethodGet {
+                NotFound(Context)
+                return
+        }
+
+        fromDayStr := Context.Request.URL.Query().Get("from_day")
+        fromMonthStr := Context.Request.URL.Query().Get("from_month")
+        fromYearStr := Context.Request.URL.Query().Get("from_year")
+        toDayStr := Context.Request.URL.Query().Get("to_day")
+        toMonthStr := Context.Request.URL.Query().Get("to_month")
+        toYearStr := Context.Request.URL.Query().Get("to_year")
+        pageStr := Context.Request.URL.Query().Get("page")
+
+        page := 1
+        if pageStr != "" {
+                p, err := strconv.Atoi(pageStr)
+                if err == nil && p > 0 {
+                        page = p
+                }
+        }
+
+        Data := NewsArchiveTmplData{
+                Common:      GetCommonTmplData("News Archive", Context.AccountID),
+                SearchNews:  []TNews{},
+                HasResults:  false,
+                CurrentPage: page,
+                TotalPages:  1,
+                TotalNews:   0,
+                FromDay:     fromDayStr,
+                FromMonth:   fromMonthStr,
+                FromYear:    fromYearStr,
+                ToDay:       toDayStr,
+                ToMonth:     toMonthStr,
+                ToYear:      toYearStr,
+        }
+
+        // If search parameters are provided
+        if fromDayStr != "" && fromMonthStr != "" && fromYearStr != "" &&
+           toDayStr != "" && toMonthStr != "" && toYearStr != "" {
+                
+                fromDay := ParseInteger(fromDayStr)
+                fromMonth := ParseInteger(fromMonthStr)
+                fromYear := ParseInteger(fromYearStr)
+                toDay := ParseInteger(toDayStr)
+                toMonth := ParseInteger(toMonthStr)
+                toYear := ParseInteger(toYearStr)
+
+                fromDate := time.Date(fromYear, time.Month(fromMonth), fromDay, 0, 0, 0, 0, time.UTC)
+                toDate := time.Date(toYear, time.Month(toMonth), toDay, 23, 59, 59, 0, time.UTC)
+
+                itemsPerPage := 5
+                news, err := GetNewsByDateRangePaginated(fromDate, toDate, page, itemsPerPage)
+                if err == nil && len(news) > 0 {
+                        Data.SearchNews = news
+                        Data.HasResults = true
+
+                        totalCount, err := GetNewsByDateRangeCount(fromDate, toDate)
+                        if err == nil {
+                                Data.TotalNews = totalCount
+                                Data.TotalPages = (totalCount + itemsPerPage - 1) / itemsPerPage
+                                if Data.TotalPages < 1 {
+                                        Data.TotalPages = 1
+                                }
+                        }
+                }
+        }
+
+        RenderNewsArchive(Context, &Data)
+}
+
+func HandleNewsArchiveView(Context *THttpRequestContext) {
+        if len(Context.Params) == 0 {
+                NotFound(Context)
+                return
+        }
+
+        newsID, err := strconv.Atoi(Context.Params[0])
+        if err != nil {
+                BadRequest(Context)
+                return
+        }
+
+        news, err := GetNewsById(newsID)
+        if err != nil || news == nil {
+                RenderMessage(Context, "Not Found", "News article not found.")
+                return
+        }
+
+        RenderMessage(Context, news.Title, news.Content)
+}
+
 func HandleAdminNews(Context *THttpRequestContext) {
         RenderAdminNews(Context)
 }
@@ -692,6 +784,8 @@ func main() {
         Router.Add("GET", "/", HandleIndex)
         Router.Add("GET", "/index", HandleIndex)
         Router.Add("GET", "/news", HandleNews)
+        Router.Add("GET", "/news/archive", HandleNewsArchive)
+        Router.Add("GET", "/news/archive/view/", HandleNewsArchiveView)
         Router.Add("GET", "/admin/news", HandleAdminNews)
         Router.Add("POST", "/admin/news/create", HandleAdminNewsCreate)
         Router.Add("GET", "/admin/news/edit/", HandleAdminNewsEdit)

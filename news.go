@@ -112,6 +112,102 @@ func GetAllNews() ([]TNews, error) {
         return news, nil
 }
 
+func GetNewsByDateRange(fromDate time.Time, toDate time.Time) ([]TNews, error) {
+        g_NewsMutex.Lock()
+        defer g_NewsMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return []TNews{}, fmt.Errorf("database not initialized")
+        }
+
+        rows, err := g_NewsDb.Query(`
+                SELECT id, title, content, created_at 
+                FROM news 
+                WHERE created_at >= $1 AND created_at <= $2
+                ORDER BY created_at DESC
+        `, fromDate, toDate.AddDate(0, 0, 1))
+        if err != nil {
+                g_LogErr.Printf("Failed to query news by date range: %v", err)
+                return nil, err
+        }
+        defer rows.Close()
+
+        var news []TNews
+        for rows.Next() {
+                var n TNews
+                err := rows.Scan(&n.ID, &n.Title, &n.Content, &n.CreatedAt)
+                if err != nil {
+                        g_LogErr.Printf("Failed to scan news row: %v", err)
+                        continue
+                }
+                news = append(news, n)
+        }
+
+        return news, nil
+}
+
+func GetNewsByDateRangePaginated(fromDate time.Time, toDate time.Time, page int, itemsPerPage int) ([]TNews, error) {
+        g_NewsMutex.Lock()
+        defer g_NewsMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return []TNews{}, fmt.Errorf("database not initialized")
+        }
+
+        if page < 1 {
+                page = 1
+        }
+
+        offset := (page - 1) * itemsPerPage
+
+        rows, err := g_NewsDb.Query(`
+                SELECT id, title, content, created_at 
+                FROM news 
+                WHERE created_at >= $1 AND created_at <= $2
+                ORDER BY created_at DESC
+                LIMIT $3 OFFSET $4
+        `, fromDate, toDate.AddDate(0, 0, 1), itemsPerPage, offset)
+        if err != nil {
+                g_LogErr.Printf("Failed to query news by date range paginated: %v", err)
+                return nil, err
+        }
+        defer rows.Close()
+
+        var news []TNews
+        for rows.Next() {
+                var n TNews
+                err := rows.Scan(&n.ID, &n.Title, &n.Content, &n.CreatedAt)
+                if err != nil {
+                        g_LogErr.Printf("Failed to scan news row: %v", err)
+                        continue
+                }
+                news = append(news, n)
+        }
+
+        return news, nil
+}
+
+func GetNewsByDateRangeCount(fromDate time.Time, toDate time.Time) (int, error) {
+        g_NewsMutex.Lock()
+        defer g_NewsMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return 0, fmt.Errorf("database not initialized")
+        }
+
+        var count int
+        err := g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM news 
+                WHERE created_at >= $1 AND created_at <= $2
+        `, fromDate, toDate.AddDate(0, 0, 1)).Scan(&count)
+        if err != nil {
+                g_LogErr.Printf("Failed to count news by date range: %v", err)
+                return 0, err
+        }
+
+        return count, nil
+}
+
 func GetNewsById(id int) (*TNews, error) {
         g_NewsMutex.Lock()
         defer g_NewsMutex.Unlock()

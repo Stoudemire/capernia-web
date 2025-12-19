@@ -88,6 +88,21 @@ type (
                 CurrentSkillDisplay string
                 CurrentVocation   string
         }
+
+        NewsArchiveTmplData struct {
+                Common      CommonTmplData
+                SearchNews  []TNews
+                HasResults  bool
+                CurrentPage int
+                TotalPages  int
+                TotalNews   int
+                FromDay     string
+                FromMonth   string
+                FromYear    string
+                ToDay       string
+                ToMonth     string
+                ToYear      string
+        }
 )
 
 var (
@@ -330,6 +345,10 @@ func RenderNews(Context *THttpRequestContext) {
                         TotalPages: totalPages,
                         TotalNews: totalNews,
                 })
+}
+
+func RenderNewsArchive(Context *THttpRequestContext, Data *NewsArchiveTmplData) {
+        ExecuteTemplate(Context.Writer, "news_archive.tmpl", Data)
 }
 
 func RenderAdminNews(Context *THttpRequestContext) {
