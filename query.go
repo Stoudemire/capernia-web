@@ -3,7 +3,6 @@ package main
 import (
         "encoding/binary"
         "net"
-        "sort"
         "strings"
         "sync"
         "time"
@@ -655,12 +654,8 @@ func GetWorlds() []TWorld {
                         g_WorldCache = Worlds
                         g_WorldCacheRefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 } else {
-                        // Demo mode: return mock worlds
-                        g_WorldCache = []TWorld{
-                                {Name: "Thais", Type: "Normal", NumPlayers: 245, MaxPlayers: 500, OnlinePeak: 289, OnlinePeakTimestamp: int(time.Now().Unix()), LastStartup: int(time.Now().Unix()) - 86400, LastShutdown: int(time.Now().Unix()) - 172800},
-                                {Name: "Fibula", Type: "Non-PvP", NumPlayers: 156, MaxPlayers: 400, OnlinePeak: 198, OnlinePeakTimestamp: int(time.Now().Unix()), LastStartup: int(time.Now().Unix()) - 86400, LastShutdown: int(time.Now().Unix()) - 172800},
-                                {Name: "Carnivora", Type: "PvP-Enforced", NumPlayers: 89, MaxPlayers: 300, OnlinePeak: 142, OnlinePeakTimestamp: int(time.Now().Unix()), LastStartup: int(time.Now().Unix()) - 86400, LastShutdown: int(time.Now().Unix()) - 172800},
-                        }
+                        // Demo mode: return empty worlds list
+                        g_WorldCache = []TWorld{}
                         g_WorldCacheRefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 }
         }
@@ -705,18 +700,11 @@ func GetOnlineCharacters(World string) []TOnlineCharacter {
                         Entry.Data = Characters
                         Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 } else {
-                        // Demo mode: return mock data
-                        mockCharacters := []TOnlineCharacter{
-                                {Name: "Legendary Warrior", Level: 250, Profession: "Knight"},
-                                {Name: "Arcane Sorcerer", Level: 220, Profession: "Sorcerer"},
-                                {Name: "Holy Priest", Level: 200, Profession: "Druid"},
-                                {Name: "Shadow Assassin", Level: 210, Profession: "Paladin"},
-                                {Name: "Master Ranger", Level: 195, Profession: "Knight"},
-                        }
+                        // Demo mode: return empty online characters list
                         g_OnlineCharactersCache = append(g_OnlineCharactersCache, TOnlineCharactersCacheEntry{})
                         Entry = &g_OnlineCharactersCache[len(g_OnlineCharactersCache)-1]
                         Entry.World = World
-                        Entry.Data = mockCharacters
+                        Entry.Data = []TOnlineCharacter{}
                         Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 }
         }
@@ -756,18 +744,11 @@ func GetKillStatistics(World string) []TKillStatistics {
                         Entry.Data = Stats
                         Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 } else {
-                        // Demo mode: return mock kill statistics
-                        mockStats := []TKillStatistics{
-                                {RaceName: "Dragon Lord", TimesKilled: 1247, PlayersKilled: 89},
-                                {RaceName: "Demon", TimesKilled: 3421, PlayersKilled: 156},
-                                {RaceName: "Giant Spider", TimesKilled: 8932, PlayersKilled: 234},
-                                {RaceName: "Vampire", TimesKilled: 2156, PlayersKilled: 76},
-                                {RaceName: "Cyclops", TimesKilled: 5634, PlayersKilled: 142},
-                        }
+                        // Demo mode: return empty kill statistics list
                         g_KillStatisticsCache = append(g_KillStatisticsCache, TKillStatisticsCacheEntry{})
                         Entry = &g_KillStatisticsCache[len(g_KillStatisticsCache)-1]
                         Entry.World = World
-                        Entry.Data = mockStats
+                        Entry.Data = []TKillStatistics{}
                         Entry.RefreshTime = time.Now().Add(g_WorldRefreshInterval)
                 }
         }
@@ -780,82 +761,47 @@ func GetKillStatistics(World string) []TKillStatistics {
 }
 
 func GetHighscores(Skill string, Vocation string) []THighscore {
-        // Mock data for demo purposes
-        // In production, this would query the database
-        
-        skillNames := map[string]string{
-                "magic": "Magic",
-                "fist": "Fist",
-                "club": "Club",
-                "sword": "Sword",
-                "axe": "Axe",
-                "distance": "Distance",
-                "shielding": "Shielding",
-                "fishing": "Fishing",
+        // Return empty highscores list
+        return []THighscore{}
+}
+
+func GetHouses(Town string, HouseType int, Status int) []THouse {
+        // TODO: Implement database query for houses
+        // For now return empty list
+        return []THouse{}
+}
+
+func GetHouse(HouseID int) *THouse {
+        // TODO: Implement database query for single house
+        return nil
+}
+
+func GetTowns() []string {
+        towns := []string{
+                "Ab'Dendriel",
+                "Carlin",
+                "Darashia",
+                "Edron",
+                "Kazordoon",
+                "Thais",
+                "Venore",
         }
+        return towns
+}
 
-        skillName := "All Skills"
-        if name, ok := skillNames[Skill]; ok {
-                skillName = name
-        }
+func GetGuilds() []TGuild {
+        // TODO: Implement database query for guilds
+        // For now return empty list
+        return []TGuild{}
+}
 
-        vocations := map[string]string{
-                "sorcerer": "Sorcerer",
-                "druid": "Druid",
-                "paladin": "Paladin",
-                "knight": "Knight",
-        }
+func GetGuild(GuildID int) *TGuild {
+        // TODO: Implement database query for single guild
+        return nil
+}
 
-        vocList := []string{"Sorcerer", "Druid", "Paladin", "Knight"}
-        prefixes := []string{"The", "Great", "Mighty", "Dark", "Light", "Holy", "Shadow", "Dragon", "Titan", "Phoenix", "Ancient", "Royal", "Elite", "Savage", "Mystic", "Eternal", "Legendary", "Supreme"}
-        suffixes := []string{"Slayer", "Master", "Warrior", "Mage", "Knight", "Paladin", "Ranger", "Sage", "Hunter", "Blade", "Soul", "Heart", "Spirit", "Power", "Storm", "Flame", "Frost", "Void"}
-        
-        // Generate 100 mock characters
-        mockData := []THighscore{}
-        for i := 0; i < 100; i++ {
-                level := 100 + (i % 151)
-                skillValue := 50 + (i % 121)
-                prof := vocList[i%4]
-                prefix := prefixes[i%len(prefixes)]
-                suffix := suffixes[i%len(suffixes)]
-                name := prefix + " " + suffix
-                if i%5 == 0 {
-                        name = prefix + " " + suffix + " " + string(rune('I'+i/25))
-                }
-                
-                mockData = append(mockData, THighscore{
-                        CharacterName: name,
-                        Profession:    prof,
-                        Level:         level,
-                        SkillName:     skillName,
-                        SkillValue:    skillValue,
-                })
-        }
-
-        // Sort by skill value descending (highest first)
-        sort.Slice(mockData, func(i, j int) bool {
-                return mockData[i].SkillValue > mockData[j].SkillValue
-        })
-
-        // Filter by skill and vocation if provided
-        if Skill != "" || Vocation != "" {
-                filtered := []THighscore{}
-                for _, hs := range mockData {
-                        if Skill != "" && Skill != "all" {
-                                // In production, would filter by actual skill value
-                        }
-                        if Vocation != "" && Vocation != "all" {
-                                vocName, ok := vocations[Vocation]
-                                if !ok || hs.Profession != vocName {
-                                        continue
-                                }
-                        }
-                        filtered = append(filtered, hs)
-                }
-                if len(filtered) > 0 {
-                        return filtered
-                }
-        }
-
-        return mockData
+func GetGuildMembers(GuildID int) []TGuildMember {
+        // TODO: Implement database query for guild members
+        // For now return empty list
+        return []TGuildMember{}
 }

@@ -1,0 +1,34 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <div class="content-header-text">
+                                <span>Guilds</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{if .Guilds}}
+                                <table style="width: 100%; margin-top: 20px;">
+                                        <tr style="border-bottom: 2px solid #3d2817;">
+                                                <th style="padding: 10px; text-align: left;">#</th>
+                                                <th style="padding: 10px; text-align: left;">Name</th>
+                                                <th style="padding: 10px; text-align: left;">Leader</th>
+                                                <th style="padding: 10px; text-align: left;">Members</th>
+                                                <th style="padding: 10px; text-align: left;">Created</th>
+                                        </tr>
+                                        {{range $idx, $guild := .Guilds}}
+                                                <tr style="border-bottom: 1px solid #3d2817;">
+                                                        <td style="padding: 10px;">{{.GuildID}}</td>
+                                                        <td style="padding: 10px;"><a href="/guild?id={{.GuildID}}" style="color: #c9a86a; text-decoration: none;">{{.Name}}</a></td>
+                                                        <td style="padding: 10px;">{{.Leader}}</td>
+                                                        <td style="padding: 10px;">{{.MemberCount}}</td>
+                                                        <td style="padding: 10px;">{{.Created | FormatTimestamp}}</td>
+                                                </tr>
+                                        {{end}}
+                                </table>
+                        {{else}}
+                                <p style="text-align: center; margin-top: 20px;">No guilds available.</p>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

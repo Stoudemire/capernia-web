@@ -577,6 +577,80 @@ func HandleDownloadClient(Context *THttpRequestContext) {
         RenderDownloadClient(Context)
 }
 
+func HandleHouses(Context *THttpRequestContext) {
+        Town := Context.Request.URL.Query().Get("town")
+        if Town == "" || Town == "all" {
+                Town = "all"
+        }
+        
+        GhStr := Context.Request.URL.Query().Get("gh")
+        Gh := 0
+        if GhStr == "1" {
+                Gh = 1
+        }
+        
+        StatusStr := Context.Request.URL.Query().Get("status")
+        Status := 0
+        if StatusStr != "" {
+                Status = ParseInteger(StatusStr)
+        }
+        
+        Houses := GetHouses(Town, Gh, Status)
+        Towns := GetTowns()
+        
+        RenderHouses(Context, Houses, Town, Gh, Status, Towns)
+}
+
+func HandleHouseDetail(Context *THttpRequestContext) {
+        HouseIDStr := Context.Request.URL.Query().Get("id")
+        if HouseIDStr == "" {
+                Redirect(Context, "/houses")
+                return
+        }
+        
+        HouseID, Err := strconv.Atoi(HouseIDStr)
+        if Err != nil {
+                BadRequest(Context)
+                return
+        }
+        
+        House := GetHouse(HouseID)
+        if House == nil {
+                RenderMessage(Context, "Not Found", "House not found.")
+                return
+        }
+        
+        RenderHouseDetail(Context, House)
+}
+
+func HandleGuilds(Context *THttpRequestContext) {
+        Guilds := GetGuilds()
+        RenderGuilds(Context, Guilds)
+}
+
+func HandleGuildDetail(Context *THttpRequestContext) {
+        GuildIDStr := Context.Request.URL.Query().Get("id")
+        if GuildIDStr == "" {
+                Redirect(Context, "/guilds")
+                return
+        }
+        
+        GuildID, Err := strconv.Atoi(GuildIDStr)
+        if Err != nil {
+                BadRequest(Context)
+                return
+        }
+        
+        Guild := GetGuild(GuildID)
+        if Guild == nil {
+                RenderMessage(Context, "Not Found", "Guild not found.")
+                return
+        }
+        
+        Members := GetGuildMembers(GuildID)
+        RenderGuildDetail(Context, Guild, Members)
+}
+
 func HandleNewsArchive(Context *THttpRequestContext) {
         if Context.Request.Method != http.MethodGet {
                 NotFound(Context)
@@ -780,6 +854,10 @@ func main() {
         Router.Add("GET", "/killstatistics", HandleKillStatistics)
         Router.Add("GET", "/highscores", HandleHighscores)
         Router.Add("GET", "/world", HandleWorld)
+        Router.Add("GET", "/house", HandleHouseDetail)
+        Router.Add("GET", "/houses", HandleHouses)
+        Router.Add("GET", "/guild", HandleGuildDetail)
+        Router.Add("GET", "/guilds", HandleGuilds)
         Router.NotFound = NotFound
 
         // NOTE(fusion): Force the server to run on IPv4 because that is the only

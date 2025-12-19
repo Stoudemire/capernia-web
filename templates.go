@@ -106,6 +106,61 @@ type (
                 ToMonth     string
                 ToYear      string
         }
+
+        THouse struct {
+                HouseID     int
+                Name        string
+                Rent        int
+                Description string
+                Size        int
+                Town        string
+                GuildHouse  bool
+                Status      string
+                Owner       string
+                PaidUntil   int
+        }
+
+        HousesTmplData struct {
+                Common      CommonTmplData
+                Houses      []THouse
+                SelectedTown string
+                SelectedType int
+                SelectedStatus int
+                Towns       []string
+        }
+
+        HouseDetailTmplData struct {
+                Common CommonTmplData
+                House  *THouse
+        }
+
+        TGuild struct {
+                GuildID   int
+                Name      string
+                Leader    string
+                Created   int
+                MemberCount int
+        }
+
+        TGuildMember struct {
+                CharacterName string
+                Rank          string
+                Title         string
+                Joined        int
+                Level         int
+                Profession    string
+        }
+
+        GuildsTmplData struct {
+                Common CommonTmplData
+                Guilds []TGuild
+        }
+
+        GuildDetailTmplData struct {
+                Common  CommonTmplData
+                Guild   *TGuild
+                Members []TGuildMember
+        }
 )
 
 var (
@@ -474,5 +529,42 @@ func RenderDownloadClient(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "download_client.tmpl",
                 GenericTmplData{
                         Common: GetCommonTmplData("Download Client", Context.AccountID),
+                })
+}
+
+func RenderHouses(Context *THttpRequestContext, Houses []THouse, SelectedTown string, SelectedType int, SelectedStatus int, Towns []string) {
+        ExecuteTemplate(Context.Writer, "houses.tmpl",
+                HousesTmplData{
+                        Common: GetCommonTmplData("Houses", Context.AccountID),
+                        Houses: Houses,
+                        SelectedTown: SelectedTown,
+                        SelectedType: SelectedType,
+                        SelectedStatus: SelectedStatus,
+                        Towns: Towns,
+                })
+}
+
+func RenderHouseDetail(Context *THttpRequestContext, House *THouse) {
+        ExecuteTemplate(Context.Writer, "house_detail.tmpl",
+                HouseDetailTmplData{
+                        Common: GetCommonTmplData("House", Context.AccountID),
+                        House: House,
+                })
+}
+
+func RenderGuilds(Context *THttpRequestContext, Guilds []TGuild) {
+        ExecuteTemplate(Context.Writer, "guilds.tmpl",
+                GuildsTmplData{
+                        Common: GetCommonTmplData("Guilds", Context.AccountID),
+                        Guilds: Guilds,
+                })
+}
+
+func RenderGuildDetail(Context *THttpRequestContext, Guild *TGuild, Members []TGuildMember) {
+        ExecuteTemplate(Context.Writer, "guild_detail.tmpl",
+                GuildDetailTmplData{
+                        Common: GetCommonTmplData("Guild", Context.AccountID),
+                        Guild: Guild,
+                        Members: Members,
                 })
 }

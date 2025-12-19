@@ -1,0 +1,79 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-home"></i>
+                        <div class="content-header-text">
+                                <span>Houses</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <center>
+                        <form method="get" style="margin-bottom: 20px;">
+                                <input type="hidden" name="page" value="houses">
+                                <table><tbody><tr>
+                                        <td style="padding: 10px;">
+                                                Town:<br>
+                                                <select name="town" style="padding: 8px 12px; background: rgba(0,0,0,.3); border: 1px solid #3d2817; color: #e8d7c3; border-radius: 4px; font-size: 1rem; cursor: pointer; min-width: 150px;">
+                                                        <option value="all" {{if eq .SelectedTown "all"}}selected{{end}}>All</option>
+                                                        {{range .Towns}}
+                                                        <option value="{{.}}" {{if eq $.SelectedTown .}}selected{{end}}>{{.}}</option>
+                                                        {{end}}
+                                                </select>
+                                        </td>
+                                        <td style="padding: 10px;">
+                                                Type:<br>
+                                                <select name="gh" style="padding: 8px 12px; background: rgba(0,0,0,.3); border: 1px solid #3d2817; color: #e8d7c3; border-radius: 4px; font-size: 1rem; cursor: pointer; min-width: 150px;">
+                                                        <option value="0" {{if eq .SelectedType 0}}selected{{end}}>House</option>
+                                                        <option value="1" {{if eq .SelectedType 1}}selected{{end}}>Guildhouse</option>
+                                                </select>
+                                        </td>
+                                        <td style="padding: 10px;">
+                                                Status:<br>
+                                                <select name="status" style="padding: 8px 12px; background: rgba(0,0,0,.3); border: 1px solid #3d2817; color: #e8d7c3; border-radius: 4px; font-size: 1rem; cursor: pointer; min-width: 150px;">
+                                                        <option value="0" {{if eq .SelectedStatus 0}}selected{{end}}>All</option>
+                                                        <option value="1" {{if eq .SelectedStatus 1}}selected{{end}}>Auctioned</option>
+                                                        <option value="2" {{if eq .SelectedStatus 2}}selected{{end}}>Rented</option>
+                                                </select>
+                                        </td>
+                                        <td style="padding: 10px;">
+                                                <input type="submit" value="Search" style="padding: 8px 20px; background: linear-gradient(180deg, #e6c98a 0%, #c9a86a 45%, #a8834f 100%); color: #1a1410; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                        </td>
+                                </tr></tbody></table>
+                        </form>
+                        </center>
+
+                        {{if .Houses}}
+                                <table style="width: 100%; margin-top: 20px;">
+                                        <tr style="border-bottom: 2px solid #3d2817;">
+                                                <th style="padding: 10px; text-align: left;">#</th>
+                                                <th style="padding: 10px; text-align: left;">Name</th>
+                                                <th style="padding: 10px; text-align: left;">Description</th>
+                                                <th style="padding: 10px; text-align: left;">Rent</th>
+                                                <th style="padding: 10px; text-align: left;">SQM</th>
+                                                <th style="padding: 10px; text-align: left;">Status</th>
+                                        </tr>
+                                        {{range $idx, $house := .Houses}}
+                                                <tr style="border-bottom: 1px solid #3d2817;">
+                                                        <td style="padding: 10px;">{{.HouseID}}</td>
+                                                        <td style="padding: 10px;"><a href="/house?id={{.HouseID}}" style="color: #c9a86a; text-decoration: none;">{{.Name}}</a></td>
+                                                        <td style="padding: 10px;">{{.Description}}</td>
+                                                        <td style="padding: 10px;">{{.Rent}}</td>
+                                                        <td style="padding: 10px;">{{.Size}}</td>
+                                                        <td style="padding: 10px;">
+                                                                {{if eq .Status "Rented"}}
+                                                                        <span style="color: #1A1;">{{.Status}}</span>
+                                                                {{else if eq .Status "Auctioned"}}
+                                                                        <span style="color: #A11;">{{.Status}}</span>
+                                                                {{else}}
+                                                                        {{.Status}}
+                                                                {{end}}
+                                                        </td>
+                                                </tr>
+                                        {{end}}
+                                </table>
+                        {{else}}
+                                <p style="text-align: center; margin-top: 20px;">No houses available with the selected filters.</p>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

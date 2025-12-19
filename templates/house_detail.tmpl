@@ -1,0 +1,32 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-home"></i>
+                        <div class="content-header-text">
+                                <span>House Details</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{if .House}}
+                                <h2 style="margin-bottom: 20px;">{{.House.Name}}</h2>
+                                <p><strong>Description:</strong> {{.House.Description}}</p>
+                                <p><strong>Town:</strong> {{.House.Town}}</p>
+                                <p><strong>Size:</strong> {{.House.Size}} square meters</p>
+                                <p><strong>Monthly Rent:</strong> {{.House.Rent}} gold</p>
+                                <p><strong>Type:</strong> {{if .House.GuildHouse}}Guildhouse{{else}}House{{end}}</p>
+                                <p><strong>Status:</strong> {{.House.Status}}</p>
+                                {{if .House.Owner}}
+                                <p><strong>Owner:</strong> {{.House.Owner}}</p>
+                                {{if gt .House.PaidUntil 0}}
+                                <p><strong>Paid Until:</strong> {{.House.PaidUntil | FormatTimestamp}}</p>
+                                {{end}}
+                                {{end}}
+                                <br>
+                                <a href="/world" style="color: #c9a86a; text-decoration: none;">&lt; Back to Houses</a>
+                        {{else}}
+                                <p>House not found.</p>
+                                <a href="/world" style="color: #c9a86a; text-decoration: none;">&lt; Back to Houses</a>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}
