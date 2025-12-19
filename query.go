@@ -872,6 +872,7 @@ func GetGuild(GuildID int) *TGuild {
         defer g_QueryManagerMutex.Unlock()
 
         if g_NewsDb == nil {
+                g_LogErr.Printf("GetGuild: g_NewsDb is nil")
                 return nil
         }
 
@@ -879,14 +880,14 @@ func GetGuild(GuildID int) *TGuild {
         var leaderID int
         err := g_NewsDb.QueryRow(`
                 SELECT g.guildid, g.name, COALESCE(g.description, ''), g.leaderid, g.created,
-                       COUNT(gm.characterid) as member_count
+                       COUNT(DISTINCT gm.characterid) as member_count
                 FROM guilds g
                 LEFT JOIN guildmembers gm ON g.guildid = gm.guildid
                 WHERE g.guildid = $1
                 GROUP BY g.guildid, g.name, g.description, g.leaderid, g.created
         `, GuildID).Scan(&guild.GuildID, &guild.Name, &guild.Description, &leaderID, &guild.Created, &guild.MemberCount)
         if err != nil {
-                g_LogErr.Printf("Failed to query guild: %v", err)
+                g_LogErr.Printf("Failed to query guild ID %d: %v", GuildID, err)
                 return nil
         }
 
