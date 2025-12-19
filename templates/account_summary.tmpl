@@ -1,0 +1,86 @@
+{{template "_header.tmpl" .}}
+        {{with .Account}}
+                <div class="content-card">
+                        <div class="content-header">
+                                <i class="fas fa-user"></i>
+                                <div class="content-header-text">
+                                        <span>Account Information</span>
+                                </div>
+                        </div>
+                        <div class="content-body">
+                                <table class="info">
+                                        <tr>
+                                                <th>Email:</th>
+                                                <td>{{.Email}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Status:</th>
+                                                {{if eq .PremiumDays 1}}
+                                                        <td style="color: #A11;">Premium Account (last day)</td>
+                                                {{else if gt .PremiumDays 1}}
+                                                        <td>Premium Account ({{.PremiumDays}} days left)</td>
+                                                {{else}}
+                                                        <td>Free Account</td>
+                                                {{end}}
+                                        </tr>
+                                        {{if .PendingPremiumDays}}
+                                                <tr>
+                                                        <th>Pending Premium:</th>
+                                                        {{if eq .PendingPremiumDays 1}}
+                                                                <td>1 day</td>
+                                                        {{else}}
+                                                                <td>{{.PendingPremiumDays}} days</td>
+                                                        {{end}}
+                                                </tr>
+                                        {{end}}
+                                </table>
+                        </div>
+                </div>
+                {{if .Characters}}
+                        <div class="content-card">
+                                <div class="content-header">
+                                        <i class="fas fa-list"></i>
+                                        <div class="content-header-text">
+                                                <span>Characters</span>
+                                        </div>
+                                </div>
+                                <div class="content-body">
+                                        <table>
+                                                <tr>
+                                                        <th>Name</th>
+                                                        <th>Level</th>
+                                                        <th>Vocation</th>
+                                                        <th>World</th>
+                                                        <th>Status</th>
+                                                </tr>
+                                                {{range .Characters}}
+                                                        <tr>
+                                                                <td><a href="/character?name={{.Name}}">{{.Name}}</a></td>
+                                                                <td>{{or .Level 1}}</td>
+                                                                <td>{{or .Profession "None"}}</td>
+                                                                <td>{{.World}}</td>
+                                                                {{if .Online}}
+                                                                        <td style="color: #1A1;">Online</td>
+                                                                {{else}}
+                                                                        <td style="color: #A11;">Offline</td>
+                                                                {{end}}
+                                                        </tr>
+                                                {{end}}
+                                        </table>
+                                </div>
+                        </div>
+                {{end}}
+        {{else}}
+                <div class="content-card">
+                        <div class="content-header">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <div class="content-header-text">
+                                        <span>Error</span>
+                                </div>
+                        </div>
+                        <div class="content-body">
+                                <p>Something went wrong when loading your account summary. Wait a few moments and try again.</p>
+                        </div>
+                </div>
+        {{end}}
+{{template "_footer.tmpl" .}}

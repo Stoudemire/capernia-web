@@ -1,0 +1,80 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-globe"></i>
+                        <div class="content-header-text">
+                                <span>World Information</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{with .World}}
+                                <table class="info">
+                                        <tr>
+                                                <th>Name:</th>
+                                                <td>{{.Name}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Type:</th>
+                                                <td>{{.Type}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Players Online:</th>
+                                                <td>{{.NumPlayers}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Online Peak:</th>
+                                                {{if eq .OnlinePeak 1}}
+                                                        <td>{{.OnlinePeak}} player (on {{FormatTimestamp .OnlinePeakTimestamp}})</td>
+                                                {{else if gt .OnlinePeak 1}}
+                                                        <td>{{.OnlinePeak}} players (on {{FormatTimestamp .OnlinePeakTimestamp}})</td>
+                                                {{else}}
+                                                        <td>None</td>
+                                                {{end}}
+                                        </tr>
+                                        <tr>
+                                                {{if gt .LastStartup .LastShutdown}}
+                                                        <th>Uptime:</th>
+                                                        <td>{{FormatDurationSince .LastStartup}}</td>
+                                                {{else}}
+                                                        <th>Downtime:</th>
+                                                        <td style="color: #A11;">{{FormatDurationSince .LastShutdown}}</td>
+                                                {{end}}
+                                        </tr>
+                                </table>
+                                <br>
+                                <a class="button" href="/killstatistics?world={{.Name}}">Kill Statistics</a>
+                        {{else}}
+                                <p>No information available.</p>
+                        {{end}}
+                </div>
+        </div>
+
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-users"></i>
+                        <div class="content-header-text">
+                                <span>Players Online</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{if .OnlineCharacters}}
+                                <table>
+                                        <tr>
+                                                <th>Name</th>
+                                                <th>Level</th>
+                                                <th>Vocation</th>
+                                        </tr>
+                                        {{range .OnlineCharacters}}
+                                                <tr>
+                                                        <td><a href="/character?name={{.Name}}">{{.Name}}</a></td>
+                                                        <td>{{or .Level 1}}</td>
+                                                        <td>{{or .Profession "None"}}</td>
+                                                </tr>
+                                        {{end}}
+                                </table>
+                        {{else}}
+                                <p>There are no players online.</p>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

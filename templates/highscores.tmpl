@@ -1,0 +1,62 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-trophy"></i>
+                        <div class="content-header-text">
+                                <span>Highscores</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <div style="margin-bottom: 1.5rem;">
+                                <label for="skill_filter" style="margin-right: 0.5rem;">Filter by Skill:</label>
+                                <select id="skill_filter" style="padding: 0.5rem; background: rgba(0,0,0,.3); border: 1px solid var(--border-color); color: var(--text-light); border-radius: 4px;">
+                                        <option value="">-- All Skills --</option>
+                                        <option value="magic">Magic</option>
+                                        <option value="fist">Fist</option>
+                                        <option value="club">Club</option>
+                                        <option value="sword">Sword</option>
+                                        <option value="axe">Axe</option>
+                                        <option value="distance">Distance</option>
+                                        <option value="shielding">Shielding</option>
+                                        <option value="fishing">Fishing</option>
+                                </select>
+                        </div>
+
+                        <table>
+                                <tr>
+                                        <th style="width: 60px;">Rank</th>
+                                        <th>Character</th>
+                                        <th>Level</th>
+                                        <th>Skill</th>
+                                        <th>Value</th>
+                                </tr>
+                                {{if .Highscores}}
+                                        {{range $index, $hs := .Highscores}}
+                                        <tr>
+                                                <td style="text-align: center;">{{$index}}</td>
+                                                <td><a href="/character?name={{$hs.CharacterName}}">{{$hs.CharacterName}}</a></td>
+                                                <td>{{$hs.Level}}</td>
+                                                <td>{{$hs.SkillName}}</td>
+                                                <td>{{$hs.SkillValue}}</td>
+                                        </tr>
+                                        {{end}}
+                                {{else}}
+                                        <tr>
+                                                <td colspan="5" style="text-align: center;">No highscores available.</td>
+                                        </tr>
+                                {{end}}
+                        </table>
+                </div>
+        </div>
+
+        <script>
+                document.getElementById('skill_filter').addEventListener('change', function() {
+                        const skill = this.value;
+                        if (skill) {
+                                window.location.href = '/highscores?skill=' + skill;
+                        } else {
+                                window.location.href = '/highscores';
+                        }
+                });
+        </script>
+{{template "_footer.tmpl" .}}

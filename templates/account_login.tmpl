@@ -1,0 +1,25 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <div class="content-header-text">
+                                <span>Login</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <form action="/account" method="POST">
+                                <div>
+                                        <label for="login_account">ACCOUNT NUMBER</label>
+                                        <input id="login_account" type="password" name="account" required/>
+                                </div>
+
+                                <div>
+                                        <label for="login_password">PASSWORD</label>
+                                        <input id="login_password" type="password" name="password" required/>
+                                </div>
+
+                                <input type="submit" value="Login"/>
+                        </form>
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

@@ -1,0 +1,31 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-plus-circle"></i>
+                        <div class="content-header-text">
+                                <span>Create Character</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <form action="/character/create" method="POST">
+                                <label for="character_name">NAME</label>
+                                <input id="character_name" type="text" name="name" required/>
+
+                                <label for="character_sex">SEX</label>
+                                <select id="character_sex" name="sex" required>
+                                        <option value="1">MALE</option>
+                                        <option value="2">FEMALE</option>
+                                </select>
+
+                                <label for="character_world">WORLD</label>
+                                <select id="character_world" name="world" required>
+                                        {{range .Worlds}}
+                                                <option value="{{.Name}}">{{.Name}} ({{.Type}})</option>
+                                        {{end}}
+                                </select>
+
+                                <input type="submit" value="Create"/>
+                        </form>
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

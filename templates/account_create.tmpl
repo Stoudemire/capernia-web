@@ -1,0 +1,30 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-user-plus"></i>
+                        <div class="content-header-text">
+                                <span>Create Account</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <form action="/account/create" method="POST">
+                                <label for="create_account">ACCOUNT NUMBER</label>
+                                <input id="create_account" type="password" name="account" required/>
+
+                                <label for="create_email">EMAIL</label>
+                                <input id="create_email" type="email" name="email" required/>
+
+                                <label for="create_email_confirm">CONFIRM EMAIL</label>
+                                <input id="create_email_confirm" type="email" name="email_confirm" required/>
+
+                                <label for="create_password">PASSWORD</label>
+                                <input id="create_password" type="password" name="password" required/>
+
+                                <label for="create_password_confirm">CONFIRM PASSWORD</label>
+                                <input id="create_password_confirm" type="password" name="password_confirm" required/>
+
+                                <input type="submit" value="Create"/>
+                        </form>
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

@@ -1,0 +1,18 @@
+.vscode
+bin
+build
+local
+*.log
+config.cfg
+tibia-web
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work

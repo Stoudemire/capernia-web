@@ -1,0 +1,75 @@
+{{template "_header.tmpl" .}}
+        {{with .Character}}
+                <div class="content-card">
+                        <div class="content-header">
+                                <i class="fas fa-user-circle"></i>
+                                <div class="content-header-text">
+                                        <span>Character Information</span>
+                                </div>
+                        </div>
+                        <div class="content-body">
+                                <table class="info">
+                                        <tr>
+                                                <th>Name:</th>
+                                                <td>{{.Name}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Sex:</th>
+                                                {{if eq .Sex 1}}
+                                                        <td>Male</td>
+                                                {{else if eq .Sex 2}}
+                                                        <td>Female</td>
+                                                {{else}}
+                                                        <td>Unknown</td>
+                                                {{end}}
+                                        </tr>
+                                        <tr>
+                                                <th>Vocation:</th>
+                                                <td>{{or .Profession "None"}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Level:</th>
+                                                <td>{{or .Level 1}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>World:</th>
+                                                <td>{{.World}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Residence:</th>
+                                                <td>{{or .Residence "Rookgaard"}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Last Login:</th>
+                                                <td>{{FormatTimestamp .LastLogin}}</td>
+                                        </tr>
+                                        <tr>
+                                                <th>Account Status:</th>
+                                                {{if .PremiumDays}}
+                                                        <td>Premium Account</td>
+                                                {{else}}
+                                                        <td>Free Account</td>
+                                                {{end}}
+                                        </tr>
+                                </table>
+                        </div>
+                </div>
+        {{end}}
+
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-search"></i>
+                        <div class="content-header-text">
+                                <span>Search Character</span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        <form action="/character" method="GET">
+                                <label for="search_name">CHARACTER NAME</label>
+                                <input id="search_name" type="text" name="name" required/>
+
+                                <input type="submit" value="Search"/>
+                        </form>
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}

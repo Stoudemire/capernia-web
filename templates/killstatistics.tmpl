@@ -1,0 +1,36 @@
+{{template "_header.tmpl" .}}
+        <div class="content-card">
+                <div class="content-header">
+                        <i class="fas fa-skull"></i>
+                        <div class="content-header-text">
+                                <span>
+                                {{with .World}}
+                                        Kill Statistics - <a href="/world?name={{.Name}}" style="color: var(--accent-gold);">{{.Name}}</a>
+                                {{else}}
+                                        Kill Statistics
+                                {{end}}
+                                </span>
+                        </div>
+                </div>
+                <div class="content-body">
+                        {{if .KillStatistics}}
+                                <table>
+                                        <tr>
+                                                <th>Creature</th>
+                                                <th>Times Killed</th>
+                                                <th>Players Killed</th>
+                                        </tr>
+                                        {{range .KillStatistics}}
+                                                <tr>
+                                                        <td>{{.RaceName}}</td>
+                                                        <td>{{.TimesKilled}}</td>
+                                                        <td>{{.PlayersKilled}}</td>
+                                                </tr>
+                                        {{end}}
+                                </table>
+                        {{else}}
+                                <p>There are no kill statistics.</p>
+                        {{end}}
+                </div>
+        </div>
+{{template "_footer.tmpl" .}}
