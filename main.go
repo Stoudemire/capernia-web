@@ -555,7 +555,8 @@ func HandleKillStatistics(Context *THttpRequestContext) {
 func HandleHighscores(Context *THttpRequestContext) {
         QueryValues := Context.Request.URL.Query()
         Skill := QueryValues.Get("skill")
-        RenderHighscores(Context, Skill)
+        Vocation := QueryValues.Get("vocation")
+        RenderHighscores(Context, Skill, Vocation)
 }
 
 func HandleWorld(Context *THttpRequestContext) {

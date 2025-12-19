@@ -742,10 +742,9 @@ func GetKillStatistics(World string) []TKillStatistics {
         }
 }
 
-func GetHighscores(Skill string) []THighscore {
+func GetHighscores(Skill string, Vocation string) []THighscore {
         // Mock data for demo purposes
         // In production, this would query the database
-        
         
         skillNames := map[string]string{
                 "magic": "Magic",
@@ -763,13 +762,42 @@ func GetHighscores(Skill string) []THighscore {
                 skillName = name
         }
 
-        // Mock highscores data
+        vocations := map[string]string{
+                "sorcerer": "Sorcerer",
+                "druid": "Druid",
+                "paladin": "Paladin",
+                "knight": "Knight",
+        }
+
+        // Mock highscores data with profession information
         mockData := []THighscore{
-                {CharacterName: "Knight Elite", Level: 250, SkillName: skillName, SkillValue: 120},
-                {CharacterName: "Mage Master", Level: 200, SkillName: skillName, SkillValue: 115},
-                {CharacterName: "Archer Deadly", Level: 180, SkillName: skillName, SkillValue: 110},
-                {CharacterName: "Paladin Holy", Level: 220, SkillName: skillName, SkillValue: 105},
-                {CharacterName: "Druid Ancient", Level: 190, SkillName: skillName, SkillValue: 100},
+                {CharacterName: "Loniu", Profession: "Sorcerer", Level: 250, SkillName: skillName, SkillValue: 86},
+                {CharacterName: "Reka Czlowieka Chaotycznego", Profession: "Sorcerer", Level: 200, SkillName: skillName, SkillValue: 86},
+                {CharacterName: "Knight Elite", Profession: "Knight", Level: 250, SkillName: skillName, SkillValue: 120},
+                {CharacterName: "Mage Master", Profession: "Druid", Level: 200, SkillName: skillName, SkillValue: 115},
+                {CharacterName: "Archer Deadly", Profession: "Paladin", Level: 180, SkillName: skillName, SkillValue: 110},
+                {CharacterName: "Paladin Holy", Profession: "Paladin", Level: 220, SkillName: skillName, SkillValue: 105},
+                {CharacterName: "Druid Ancient", Profession: "Druid", Level: 190, SkillName: skillName, SkillValue: 100},
+        }
+
+        // Filter by skill and vocation if provided
+        if Skill != "" || Vocation != "" {
+                filtered := []THighscore{}
+                for _, hs := range mockData {
+                        if Skill != "" && Skill != "all" {
+                                // In production, would filter by actual skill value
+                        }
+                        if Vocation != "" && Vocation != "all" {
+                                vocName, ok := vocations[Vocation]
+                                if !ok || hs.Profession != vocName {
+                                        continue
+                                }
+                        }
+                        filtered = append(filtered, hs)
+                }
+                if len(filtered) > 0 {
+                        return filtered
+                }
         }
 
         return mockData

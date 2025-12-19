@@ -6,12 +6,16 @@ import (
         "io"
         "net/http"
         "strconv"
+        "strings"
 )
 
 type (
         CommonTmplData struct {
-                Title     string
-                AccountID int
+                Title         string
+                AccountID     int
+                TotalPlayers  int
+                ServerOnline  bool
+                LastStartup   int
         }
 
         GenericTmplData struct {
@@ -53,14 +57,19 @@ type (
 
         THighscore struct {
                 CharacterName string
+                Profession    string
                 Level         int
                 SkillName     string
                 SkillValue    int
         }
 
         HighscoresTmplData struct {
-                Common     CommonTmplData
-                Highscores []THighscore
+                Common            CommonTmplData
+                Highscores        []THighscore
+                CurrentSkill      string
+                CurrentSkillName  string
+                CurrentSkillDisplay string
+                CurrentVocation   string
         }
 )
 
@@ -74,6 +83,8 @@ func InitTemplates() bool {
         CustomFuncs := template.FuncMap{
                 "FormatTimestamp": FormatTimestamp,
                 "FormatDurationSince": FormatDurationSince,
+                "add": func(a, b int) int { return a + b },
+                "title": strings.Title,
         }
 
         g_Templates, Err = template.New("").Funcs(CustomFuncs).ParseGlob("templates/*.tmpl")
@@ -95,14 +106,36 @@ func ExecuteTemplate(Writer io.Writer, FileName string, Data any) {
         }
 }
 
+func GetCommonTmplData(Title string, AccountID int) CommonTmplData {
+        Worlds := GetWorlds()
+        TotalPlayers := 0
+        ServerOnline := false
+        LastStartup := 0
+        
+        for _, World := range Worlds {
+                TotalPlayers += World.NumPlayers
+                if World.LastStartup > World.LastShutdown {
+                        ServerOnline = true
+                }
+                if World.LastStartup > LastStartup {
+                        LastStartup = World.LastStartup
+                }
+        }
+        
+        return CommonTmplData{
+                Title:         Title,
+                AccountID:     AccountID,
+                TotalPlayers:  TotalPlayers,
+                ServerOnline:  ServerOnline,
+                LastStartup:   LastStartup,
+        }
+}
+
 func RenderRequestError(Context *THttpRequestContext, Status int) {
         StatusText := http.StatusText(Status)
         ExecuteTemplate(Context.Writer, "message.tmpl",
                 MessageTmplData{
-                        Common: CommonTmplData{
-                                Title:     StatusText,
-                                AccountID: Context.AccountID,
-                        },
+                        Common:  GetCommonTmplData(StatusText, Context.AccountID),
                         Heading: strconv.Itoa(Status),
                         Message: StatusText,
                 })
@@ -111,10 +144,7 @@ func RenderRequestError(Context *THttpRequestContext, Status int) {
 func RenderMessage(Context *THttpRequestContext, Heading string, Message string) {
         ExecuteTemplate(Context.Writer, "message.tmpl",
                 MessageTmplData{
-                        Common: CommonTmplData{
-                                Title:     Heading,
-                                AccountID: Context.AccountID,
-                        },
+                        Common:  GetCommonTmplData(Heading, Context.AccountID),
                         Heading: Heading,
                         Message: Message,
                 })
@@ -122,10 +152,7 @@ func RenderMessage(Context *THttpRequestContext, Heading string, Message string)
 
 func RenderAccountSummary(Context *THttpRequestContext) {
         Data := AccountTmplData{
-                Common: CommonTmplData{
-                        Title:     "Account Summary",
-                        AccountID: Context.AccountID,
-                },
+                Common: GetCommonTmplData("Account Summary", Context.AccountID),
                 Account: nil,
         }
 
@@ -140,40 +167,28 @@ func RenderAccountSummary(Context *THttpRequestContext) {
 func RenderAccountLogin(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "account_login.tmpl",
                 GenericTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Login",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Login", Context.AccountID),
                 })
 }
 
 func RenderAccountCreate(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "account_create.tmpl",
                 GenericTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Create Account",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Create Account", Context.AccountID),
                 })
 }
 
 func RenderAccountRecover(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "account_recover.tmpl",
                 GenericTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Recover Account",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Recover Account", Context.AccountID),
                 })
 }
 
 func RenderCharacterCreate(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "character_create.tmpl",
                 WorldListTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Create Character",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Create Character", Context.AccountID),
                         Worlds: GetWorlds(),
                 })
 }
@@ -186,10 +201,7 @@ func RenderCharacterProfile(Context *THttpRequestContext, Character *TCharacterP
 
         ExecuteTemplate(Context.Writer, "character_profile.tmpl",
                 CharacterTmplData{
-                        Common: CommonTmplData{
-                                Title:     Title,
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData(Title, Context.AccountID),
                         Character: Character,
                 })
 }
@@ -197,10 +209,7 @@ func RenderCharacterProfile(Context *THttpRequestContext, Character *TCharacterP
 func RenderKillStatisticsList(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "killstatistics_list.tmpl",
                 WorldListTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Kill Statistics",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Kill Statistics", Context.AccountID),
                         Worlds: GetWorlds(),
                 })
 }
@@ -208,10 +217,7 @@ func RenderKillStatisticsList(Context *THttpRequestContext) {
 func RenderKillStatistics(Context *THttpRequestContext, WorldName string) {
         ExecuteTemplate(Context.Writer, "killstatistics.tmpl",
                 KillStatisticsTmplData{
-                        Common: CommonTmplData{
-                                Title:     fmt.Sprintf("Kill Statistics - %v", WorldName),
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData(fmt.Sprintf("Kill Statistics - %v", WorldName), Context.AccountID),
                         World:          GetWorld(WorldName),
                         KillStatistics: GetKillStatistics(WorldName),
                 })
@@ -220,10 +226,7 @@ func RenderKillStatistics(Context *THttpRequestContext, WorldName string) {
 func RenderWorldList(Context *THttpRequestContext) {
         ExecuteTemplate(Context.Writer, "world_list.tmpl",
                 WorldListTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Worlds",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Worlds", Context.AccountID),
                         Worlds: GetWorlds(),
                 })
 }
@@ -231,22 +234,53 @@ func RenderWorldList(Context *THttpRequestContext) {
 func RenderWorldInfo(Context *THttpRequestContext, WorldName string) {
         ExecuteTemplate(Context.Writer, "world_info.tmpl",
                 WorldTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Worlds",
-                                AccountID: Context.AccountID,
-                        },
+                        Common: GetCommonTmplData("Worlds", Context.AccountID),
                         World:            GetWorld(WorldName),
                         OnlineCharacters: GetOnlineCharacters(WorldName),
                 })
 }
 
-func RenderHighscores(Context *THttpRequestContext, Skill string) {
+func RenderHighscores(Context *THttpRequestContext, Skill string, Vocation string) {
+        skillNames := map[string]string{
+                "level": "Level",
+                "magic": "Magic Level",
+                "fist": "Fist Fighting Level",
+                "club": "Club Fighting Level",
+                "sword": "Sword Fighting Level",
+                "axe": "Axe Fighting Level",
+                "distance": "Distance Fighting Level",
+                "shielding": "Shielding Level",
+                "fishing": "Fishing Level",
+        }
+        
+        skillDisplay := map[string]string{
+                "level": "Level",
+                "magic": "Magic",
+                "fist": "Fist Fighting",
+                "club": "Club Fighting",
+                "sword": "Sword Fighting",
+                "axe": "Axe Fighting",
+                "distance": "Distance Fighting",
+                "shielding": "Shielding",
+                "fishing": "Fishing",
+        }
+        
+        skillName := "Level"
+        skillDisp := "Level"
+        if name, ok := skillNames[Skill]; ok {
+                skillName = name
+        }
+        if disp, ok := skillDisplay[Skill]; ok {
+                skillDisp = disp
+        }
+        
         ExecuteTemplate(Context.Writer, "highscores.tmpl",
                 HighscoresTmplData{
-                        Common: CommonTmplData{
-                                Title:     "Highscores",
-                                AccountID: Context.AccountID,
-                        },
-                        Highscores: GetHighscores(Skill),
+                        Common: GetCommonTmplData("Highscores", Context.AccountID),
+                        Highscores:        GetHighscores(Skill, Vocation),
+                        CurrentSkill:      Skill,
+                        CurrentSkillName:  skillName,
+                        CurrentSkillDisplay: skillDisp,
+                        CurrentVocation:   Vocation,
                 })
 }

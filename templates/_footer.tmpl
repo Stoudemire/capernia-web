@@ -6,11 +6,19 @@
                 <div class="sidebar-header">Server Status</div>
                 <div class="status-item">
                     <span>Status</span>
+                    {{if .Common.ServerOnline}}
                     <span style="color: #1A1;">Online</span>
+                    {{else}}
+                    <span style="color: #A11;">Offline</span>
+                    {{end}}
                 </div>
                 <div class="status-item">
                     <span>Players</span>
-                    <span>Loading...</span>
+                    <span>{{.Common.TotalPlayers}}</span>
+                </div>
+                <div class="status-item">
+                    <span>Uptime</span>
+                    <span>{{FormatDurationSince .Common.LastStartup}}</span>
                 </div>
             </div>
 
