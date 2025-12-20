@@ -1172,3 +1172,302 @@ func ExpelMemberFromGuild(GuildID int, CharacterName string) int {
         }
         return 0
 }
+
+type TGuildInvite struct {
+        CharacterName string
+        CharacterID   int
+        RecruiterID   int
+        Timestamp     int64
+}
+
+func GetGuildInvites(GuildID int) []TGuildInvite {
+        g_QueryManagerMutex.Lock()
+        defer g_QueryManagerMutex.Unlock()
+
+        if g_NewsDb == nil {
+                return []TGuildInvite{}
+        }
+
+        rows, err := g_NewsDb.Query(`
+                SELECT gi.characterid, c.name, gi.recruiterid, gi.timestamp
+                FROM guildinvites gi
+                LEFT JOIN characters c ON gi.characterid = c.characterid
+                WHERE gi.guildid = $1
+                ORDER BY gi.timestamp DESC
+        `, GuildID)
+        if err != nil {
+                g_LogErr.Printf("Failed to query guild invites: %v", err)
+                return []TGuildInvite{}
+        }
+        defer rows.Close()
+
+        var invites []TGuildInvite
+        for rows.Next() {
+                var invite TGuildInvite
+                var charName sql.NullString
+                err := rows.Scan(&invite.CharacterID, &charName, &invite.RecruiterID, &invite.Timestamp)
+                if err != nil {
+                        g_LogErr.Printf("Failed to scan guild invite row: %v", err)
+                        continue
+                }
+                
+                if charName.Valid {
+                        invite.CharacterName = charName.String
+                } else {
+                        invite.CharacterName = fmt.Sprintf("Character #%d", invite.CharacterID)
+                }
+                
+                invites = append(invites, invite)
+        }
+
+        return invites
+}
+
+func GetCharacterGuildInvite(AccountID int) (int, int) {
+        if g_NewsDb == nil {
+                return -1, -1
+        }
+        var charID int
+        var guildID int
+        err := g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE accountid = $1
+        `, AccountID).Scan(&charID)
+        if err != nil {
+                return -1, -1
+        }
+        err = g_NewsDb.QueryRow(`
+                SELECT guildid FROM guildinvites WHERE characterid = $1
+        `, charID).Scan(&guildID)
+        if err != nil {
+                return -1, -1
+        }
+        return charID, guildID
+}
+
+func AcceptGuildInvite(AccountID int, GuildID int) int {
+        if g_NewsDb == nil {
+                return 3
+        }
+        var charID int
+        err := g_NewsDb.QueryRow(`
+                SELECT characterid FROM characters WHERE accountid = $1
+        `, AccountID).Scan(&charID)
+        if err != nil {
+                return 1
+        }
+        
+        var inviteExists int
+        err = g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guildinvites WHERE characterid = $1 AND guildid = $2
+        `, charID, GuildID).Scan(&inviteExists)
+        if err != nil || inviteExists == 0 {
+                return 2
+        }
+        
+        _, err = g_NewsDb.Exec(`
+                INSERT INTO guildmembers (guildid, characterid, rank, joined, status)
+                VALUES ($1, $2, 2, $3, 'active')
+        `, GuildID, charID, time.Now().Unix())
+        if err != nil {
+                return 3
+        }
+        
+        _, err = g_NewsDb.Exec(`
+                DELETE FROM guildinvites WHERE characterid = $1 AND guildid = $2
+        `, charID, GuildID)
+        
+        return 0
+}
+
+func UpdateGuildDescription(GuildID int, Description string) int {
+        if g_NewsDb == nil {
+                return 1
+        }
+        
+        _, err := g_NewsDb.Exec(`
+                UPDATE guilds SET description = $1 WHERE guildid = $2
+        `, Description, GuildID)
+        if err != nil {
+                g_LogErr.Printf("Failed to update guild description: %v", err)
+                return 1
+        }
+        
+        return 0
+}
+
+func IsAccountGamemaster(AccountID int) bool {
+        if g_NewsDb == nil {
+                return false
+        }
+        
+        var count int
+        err := g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM CharacterRights cr
+                JOIN Characters c ON cr.CharacterID = c.CharacterID
+                WHERE c.AccountID = $1 AND cr.Name = 'gamemaster'
+        `, AccountID).Scan(&count)
+        if err != nil {
+                return false
+        }
+        
+        return count > 0
+}
+
+type THouseAuction struct {
+        HouseID      int
+        BidderID     int
+        BidAmount    int
+        FinishTime   int64
+        IsActive     bool
+        DaysRemaining int
+}
+
+func IsAccountPremium(AccountID int) bool {
+        if g_NewsDb == nil {
+                return false
+        }
+        
+        var premiumEnd int64
+        err := g_NewsDb.QueryRow(`
+                SELECT PremiumEnd FROM Accounts WHERE AccountID = $1
+        `, AccountID).Scan(&premiumEnd)
+        if err != nil {
+                return false
+        }
+        
+        return premiumEnd > time.Now().Unix()
+}
+
+func GetAccountHousesRented(AccountID int) int {
+        if g_NewsDb == nil {
+                return 0
+        }
+        
+        var count int
+        err := g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM HouseOwners ho
+                JOIN Characters c ON ho.OwnerID = c.CharacterID
+                WHERE c.AccountID = $1
+        `, AccountID).Scan(&count)
+        if err != nil {
+                return 0
+        }
+        
+        return count
+}
+
+func CanBidOnHouse(AccountID int, HouseID int, IsGuildHouse bool) bool {
+        if g_NewsDb == nil {
+                return false
+        }
+        
+        if !IsAccountPremium(AccountID) {
+                return false
+        }
+        
+        housesRented := GetAccountHousesRented(AccountID)
+        
+        if IsGuildHouse {
+                var hasGuildHouse int
+                err := g_NewsDb.QueryRow(`
+                        SELECT COUNT(*) FROM HouseOwners WHERE OwnerID IN 
+                        (SELECT CharacterID FROM Characters WHERE AccountID = $1)
+                `, AccountID).Scan(&hasGuildHouse)
+                if err == nil && hasGuildHouse > 0 {
+                        return false
+                }
+                
+                var isGuildLeader int
+                err = g_NewsDb.QueryRow(`
+                        SELECT COUNT(*) FROM Guilds g
+                        WHERE g.LeaderID IN (SELECT CharacterID FROM Characters WHERE AccountID = $1)
+                `, AccountID).Scan(&isGuildLeader)
+                if err != nil || isGuildLeader == 0 {
+                        return false
+                }
+        } else {
+                if housesRented > 0 {
+                        return false
+                }
+        }
+        
+        return true
+}
+
+func GetHouseAuctionInfo(HouseID int) *THouseAuction {
+        if g_NewsDb == nil {
+                return nil
+        }
+        
+        var auction THouseAuction
+        var bidderID sql.NullInt64
+        var bidAmount sql.NullInt64
+        var finishTime sql.NullInt64
+        
+        err := g_NewsDb.QueryRow(`
+                SELECT HouseID, COALESCE(BidderID, 0), COALESCE(BidAmount, 0), COALESCE(FinishTime, 0)
+                FROM HouseAuctions WHERE HouseID = $1
+        `, HouseID).Scan(&auction.HouseID, &bidderID, &bidAmount, &finishTime)
+        if err != nil {
+                return nil
+        }
+        
+        if bidderID.Valid {
+                auction.BidderID = int(bidderID.Int64)
+        }
+        if bidAmount.Valid {
+                auction.BidAmount = int(bidAmount.Int64)
+        }
+        if finishTime.Valid {
+                auction.FinishTime = finishTime.Int64
+                auction.IsActive = finishTime.Int64 > time.Now().Unix()
+                if auction.IsActive {
+                        secondsRemaining := finishTime.Int64 - time.Now().Unix()
+                        auction.DaysRemaining = int(secondsRemaining / 86400)
+                }
+        }
+        
+        return &auction
+}
+
+func PlaceHouseBid(HouseID int, CharacterID int, BidAmount int) int {
+        if g_NewsDb == nil {
+                return 3
+        }
+        
+        var currentBid int
+        err := g_NewsDb.QueryRow(`
+                SELECT COALESCE(BidAmount, 0) FROM HouseAuctions WHERE HouseID = $1
+        `, HouseID).Scan(&currentBid)
+        if err != nil && err != sql.ErrNoRows {
+                return 3
+        }
+        
+        if BidAmount <= currentBid {
+                return 1
+        }
+        
+        now := time.Now().Unix()
+        var finishTime int64
+        err = g_NewsDb.QueryRow(`
+                SELECT COALESCE(FinishTime, 0) FROM HouseAuctions WHERE HouseID = $1
+        `, HouseID).Scan(&finishTime)
+        
+        if finishTime == 0 {
+                finishTime = now + (7 * 24 * 60 * 60)
+                _, err = g_NewsDb.Exec(`
+                        INSERT INTO HouseAuctions (HouseID, BidderID, BidAmount, FinishTime)
+                        VALUES ($1, $2, $3, $4)
+                `, HouseID, CharacterID, BidAmount, finishTime)
+        } else {
+                _, err = g_NewsDb.Exec(`
+                        UPDATE HouseAuctions SET BidderID = $1, BidAmount = $2 WHERE HouseID = $3
+                `, CharacterID, BidAmount, HouseID)
+        }
+        
+        if err != nil {
+                return 3
+        }
+        
+        return 0
+}

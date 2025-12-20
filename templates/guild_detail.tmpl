@@ -10,7 +10,16 @@
                         {{if .Guild}}
                                 <h2 style="text-align: center; margin-bottom: 30px; font-size: 2.5em; color: #c9a86a;">{{.Guild.Name}}</h2>
                                 
-                                {{if .Guild.Description}}
+                                {{if .IsLeader}}
+                                <div style="margin-bottom: 30px; padding: 20px; background: #2a2420; border: 1px solid #6b5d4f; border-radius: 4px;">
+                                        <h3 style="margin-top: 0px; margin-bottom: 15px; color: #c9a86a;">Update Guild Description</h3>
+                                        <form method="POST" action="/guild/update-description">
+                                                <input type="hidden" name="guildid" value="{{.Guild.GuildID}}">
+                                                <textarea name="description" placeholder="Guild description..." style="width: 100%; min-height: 80px; padding: 8px; background: #2a2420; color: #e6c98a; border: 1px solid #6b5d4f; border-radius: 4px; font-family: Arial, sans-serif;">{{.Guild.Description}}</textarea>
+                                                <button type="submit" style="margin-top: 10px; background: linear-gradient(180deg, #90EE90 0%, #7ACB5C 45%, #5FA844 100%); color: #1a1410; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-family: 'Cinzel', serif;">Update Description</button>
+                                        </form>
+                                </div>
+                                {{else if .Guild.Description}}
                                 <p style="text-align: left; margin-bottom: 30px; font-style: italic; color: #a89780;">{{.Guild.Description}}</p>
                                 {{end}}
                                 
@@ -44,6 +53,41 @@
                                                 </tr>
                                         {{end}}
                                 </table>
+                                {{end}}
+                                
+                                {{if .Invites}}
+                                <h3 style="margin-top: 30px; margin-bottom: 15px; color: #c9a86a;">Pending Invitations</h3>
+                                <table style="width: 100%;">
+                                        <tr style="border-bottom: 2px solid #3d2817;">
+                                                <th style="padding: 10px; text-align: left;">Character Name</th>
+                                                <th style="padding: 10px; text-align: left;">Date Invited</th>
+                                                {{if .IsLeader}}<th style="padding: 10px; text-align: left;">Actions</th>{{end}}
+                                        </tr>
+                                        {{range .Invites}}
+                                                <tr style="border-bottom: 1px solid #3d2817;">
+                                                        <td style="padding: 10px;"><a href="/character?name={{.CharacterName}}" style="color: #c9a86a; text-decoration: none;">{{.CharacterName}}</a></td>
+                                                        <td style="padding: 10px;">{{.Timestamp | FormatTimestamp}}</td>
+                                                        {{if .IsLeader}}<td style="padding: 10px;">
+                                                                <form method="POST" action="/guild/revoke" style="display: inline;">
+                                                                        <input type="hidden" name="guildid" value="{{.GuildID}}">
+                                                                        <input type="hidden" name="charactername" value="{{.CharacterName}}">
+                                                                        <button type="submit" style="background: #FF6B6B; color: #fff; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.9em;">Revoke</button>
+                                                                </form>
+                                                        </td>{{end}}
+                                                </tr>
+                                        {{end}}
+                                </table>
+                                {{end}}
+                                
+                                {{if .HasInvite}}
+                                <div style="margin-top: 40px; border-top: 2px solid #3d2817; padding-top: 30px; text-align: center;">
+                                        <h3 style="margin-top: 0px; margin-bottom: 20px; color: #c9a86a;">You Have Been Invited!</h3>
+                                        <p style="margin-bottom: 20px; color: #e6c98a;">You have a pending invitation to join this guild.</p>
+                                        <form method="POST" action="/guild/accept-invite" style="display: inline;">
+                                                <input type="hidden" name="guildid" value="{{.Guild.GuildID}}">
+                                                <button type="submit" style="background: linear-gradient(180deg, #90EE90 0%, #7ACB5C 45%, #5FA844 100%); color: #1a1410; padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-family: 'Cinzel', serif;">Join Guild</button>
+                                        </form>
+                                </div>
                                 {{end}}
                                 
                                 {{if .IsViceLeader}}

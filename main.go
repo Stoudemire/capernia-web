@@ -620,7 +620,81 @@ func HandleHouseDetail(Context *THttpRequestContext) {
                 return
         }
         
-        RenderHouseDetail(Context, House)
+        Auction := GetHouseAuctionInfo(HouseID)
+        CanBid := false
+        if Context.AccountID > 0 {
+                CanBid = CanBidOnHouse(Context.AccountID, HouseID, House.GuildHouse)
+        }
+        
+        var CurrentCharID int
+        if Context.AccountID > 0 {
+                Result, Account := GetAccountSummary(Context.AccountID)
+                if Result == 0 && len(Account.Characters) > 0 {
+                        CurrentCharID = -1
+                }
+        }
+        
+        RenderHouseDetail(Context, House, Auction, CanBid, CurrentCharID)
+}
+
+func HandleHouseBid(Context *THttpRequestContext) {
+        if Context.Request.Method != http.MethodPost {
+                NotFound(Context)
+                return
+        }
+        
+        if Context.AccountID <= 0 {
+                RenderMessage(Context, "Error", "You must be logged in to bid on houses.")
+                return
+        }
+        
+        HouseIDStr := Context.Request.FormValue("houseid")
+        BidAmountStr := Context.Request.FormValue("bidamount")
+        
+        HouseID, Err := strconv.Atoi(HouseIDStr)
+        BidAmount, Err2 := strconv.Atoi(BidAmountStr)
+        
+        if Err != nil || Err2 != nil || BidAmount <= 0 {
+                RenderMessage(Context, "Error", "Invalid house or bid amount.")
+                return
+        }
+        
+        House := GetHouse(HouseID)
+        if House == nil {
+                RenderMessage(Context, "Error", "House not found.")
+                return
+        }
+        
+        if !CanBidOnHouse(Context.AccountID, HouseID, House.GuildHouse) {
+                RenderMessage(Context, "Error", "You cannot bid on this house.")
+                return
+        }
+        
+        Result, Account := GetAccountSummary(Context.AccountID)
+        if Result != 0 || len(Account.Characters) == 0 {
+                RenderMessage(Context, "Error", "No characters found.")
+                return
+        }
+        
+        CharID := -1
+        if len(Account.Characters) > 0 {
+                CharID = 1
+        }
+        
+        if CharID <= 0 {
+                RenderMessage(Context, "Error", "Unable to determine character ID.")
+                return
+        }
+        
+        BidResult := PlaceHouseBid(HouseID, CharID, BidAmount)
+        switch BidResult {
+        case 0:
+                RenderMessage(Context, "Success", fmt.Sprintf("Your bid of %d gold has been placed!", BidAmount))
+        case 1:
+                RenderMessage(Context, "Error", "Your bid must be higher than the current bid.")
+        default:
+                RenderMessage(Context, "Error", "Failed to place bid.")
+        }
 }
 
 func HandleGuilds(Context *THttpRequestContext) {
@@ -716,10 +790,16 @@ func HandleGuildDetail(Context *THttpRequestContext) {
         }
         
         Members := GetGuildMembers(GuildID)
+        Invites := GetGuildInvites(GuildID)
         LeaderCharID := GetGuildLeaderCharID(GuildID)
         IsLeader := (Context.AccountID > 0 && IsCharacterLeader(Context.AccountID, GuildID))
         IsViceLeader := (Context.AccountID > 0 && GetCharacterGuildRank(Context.AccountID, GuildID) == 1)
-        RenderGuildDetail(Context, Guild, Members, IsLeader, IsViceLeader, LeaderCharID)
+        HasInvite := false
+        if Context.AccountID > 0 {
+                _, guildID := GetCharacterGuildInvite(Context.AccountID)
+                HasInvite = (guildID == GuildID)
+        }
+        RenderGuildDetail(Context, Guild, Members, Invites, IsLeader, IsViceLeader, LeaderCharID, HasInvite)
 }
 
 func HandleGuildInvite(Context *THttpRequestContext) {
@@ -812,6 +892,64 @@ func HandleGuildExpel(Context *THttpRequestContext) {
                         RenderMessage(Context, "Error", "Cannot expel the guild leader.")
                 default:
                         RenderMessage(Context, "Error", "Failed to expel member.")
+                }
+        } else {
+                NotFound(Context)
+        }
+}
+
+func HandleGuildAcceptInvite(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                if Context.AccountID <= 0 {
+                        RenderMessage(Context, "Error", "You must be logged in to join a guild.")
+                        return
+                }
+
+                GuildIDStr := Context.Request.FormValue("guildid")
+                GuildID, Err := strconv.Atoi(GuildIDStr)
+                if Err != nil {
+                        RenderMessage(Context, "Error", "Invalid guild.")
+                        return
+                }
+
+                Result := AcceptGuildInvite(Context.AccountID, GuildID)
+                switch Result {
+                case 0:
+                        RenderMessage(Context, "Success", "You have successfully joined the guild!")
+                case 1:
+                        RenderMessage(Context, "Error", "Character not found.")
+                case 2:
+                        RenderMessage(Context, "Error", "You don't have an invitation from this guild.")
+                default:
+                        RenderMessage(Context, "Error", "Failed to join guild.")
+                }
+        } else {
+                NotFound(Context)
+        }
+}
+
+func HandleUpdateGuildDescription(Context *THttpRequestContext) {
+        if Context.Request.Method == http.MethodPost {
+                GuildIDStr := Context.Request.FormValue("guildid")
+                Description := strings.TrimSpace(Context.Request.FormValue("description"))
+
+                GuildID, Err := strconv.Atoi(GuildIDStr)
+                if Err != nil {
+                        RenderMessage(Context, "Error", "Invalid guild.")
+                        return
+                }
+
+                if !IsCharacterLeader(Context.AccountID, GuildID) {
+                        RenderMessage(Context, "Error", "Only the guild leader can modify the description.")
+                        return
+                }
+
+                Result := UpdateGuildDescription(GuildID, Description)
+                switch Result {
+                case 0:
+                        RenderMessage(Context, "Success", "Guild description has been updated.")
+                default:
+                        RenderMessage(Context, "Error", "Failed to update guild description.")
                 }
         } else {
                 NotFound(Context)
@@ -1022,6 +1160,7 @@ func main() {
         Router.Add("GET", "/highscores", HandleHighscores)
         Router.Add("GET", "/world", HandleWorld)
         Router.Add("GET", "/house", HandleHouseDetail)
+        Router.Add("POST", "/house/bid", HandleHouseBid)
         Router.Add("GET", "/houses", HandleHouses)
         Router.Add("GET", "/guild/create", HandleGuildCreate)
         Router.Add("POST", "/guild/create", HandleGuildCreate)
@@ -1029,6 +1168,8 @@ func main() {
         Router.Add("POST", "/guild/invite", HandleGuildInvite)
         Router.Add("POST", "/guild/revoke", HandleGuildRevokeInvite)
         Router.Add("POST", "/guild/expel", HandleGuildExpel)
+        Router.Add("POST", "/guild/accept-invite", HandleGuildAcceptInvite)
+        Router.Add("POST", "/guild/update-description", HandleUpdateGuildDescription)
         Router.Add("GET", "/guilds", HandleGuilds)
         Router.NotFound = NotFound
 

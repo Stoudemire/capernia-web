@@ -16,6 +16,7 @@ type (
                 TotalPlayers  int
                 ServerOnline  bool
                 LastStartup   int
+                IsGamemaster  bool
         }
 
         GenericTmplData struct {
@@ -130,8 +131,11 @@ type (
         }
 
         HouseDetailTmplData struct {
-                Common CommonTmplData
-                House  *THouse
+                Common         CommonTmplData
+                House          *THouse
+                Auction        *THouseAuction
+                CanBid         bool
+                CurrentCharID  int
         }
 
         TGuild struct {
@@ -163,9 +167,11 @@ type (
                 Common        CommonTmplData
                 Guild         *TGuild
                 Members       []TGuildMember
+                Invites       []TGuildInvite
                 IsLeader      bool
                 IsViceLeader  bool
                 LeaderCharID  int
+                HasInvite     bool
         }
 
         GuildCreateTmplData struct {
@@ -224,6 +230,7 @@ func GetCommonTmplData(Title string, AccountID int) CommonTmplData {
         TotalPlayers := 0
         ServerOnline := false
         LastStartup := 0
+        IsGamemaster := false
         
         for _, World := range Worlds {
                 TotalPlayers += World.NumPlayers
@@ -235,12 +242,17 @@ func GetCommonTmplData(Title string, AccountID int) CommonTmplData {
                 }
         }
         
+        if AccountID > 0 {
+                IsGamemaster = IsAccountGamemaster(AccountID)
+        }
+        
         return CommonTmplData{
                 Title:         Title,
                 AccountID:     AccountID,
                 TotalPlayers:  TotalPlayers,
                 ServerOnline:  ServerOnline,
                 LastStartup:   LastStartup,
+                IsGamemaster:  IsGamemaster,
         }
 }
 
@@ -557,11 +569,14 @@ func RenderHouses(Context *THttpRequestContext, Houses []THouse, SelectedTown st
                 })
 }
 
-func RenderHouseDetail(Context *THttpRequestContext, House *THouse) {
+func RenderHouseDetail(Context *THttpRequestContext, House *THouse, Auction *THouseAuction, CanBid bool, CurrentCharID int) {
         ExecuteTemplate(Context.Writer, "house_detail.tmpl",
                 HouseDetailTmplData{
-                        Common: GetCommonTmplData("House", Context.AccountID),
-                        House: House,
+                        Common:        GetCommonTmplData("House", Context.AccountID),
+                        House:         House,
+                        Auction:       Auction,
+                        CanBid:        CanBid,
+                        CurrentCharID: CurrentCharID,
                 })
 }
 
@@ -573,15 +588,17 @@ func RenderGuilds(Context *THttpRequestContext, Guilds []TGuild) {
                 })
 }
 
-func RenderGuildDetail(Context *THttpRequestContext, Guild *TGuild, Members []TGuildMember, IsLeader bool, IsViceLeader bool, LeaderCharID int) {
+func RenderGuildDetail(Context *THttpRequestContext, Guild *TGuild, Members []TGuildMember, Invites []TGuildInvite, IsLeader bool, IsViceLeader bool, LeaderCharID int, HasInvite bool) {
         ExecuteTemplate(Context.Writer, "guild_detail.tmpl",
                 GuildDetailTmplData{
                         Common:       GetCommonTmplData("Guild", Context.AccountID),
                         Guild:        Guild,
                         Members:      Members,
+                        Invites:      Invites,
                         IsLeader:     IsLeader,
                         IsViceLeader: IsViceLeader,
                         LeaderCharID: LeaderCharID,
+                        HasInvite:    HasInvite,
                 })
 }
 

@@ -1,0 +1,108 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║     TIBIA WEB SERVER - TABLAS REQUERIDAS (Schema v0.3)                     ║
+║     Basado en: schema.sql + migraciones v01-to-v02 + v02-to-v03            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+TU BASE DE DATOS ACTUAL
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ TABLAS QUE YA TIENES (NO HACER NADA):
+─────────────────────────────────────────────────────────────────────────────
+Accounts              ✓ Con PremiumEnd
+Characters           ✓ Con AccountID, Name, Level, Profession
+CharacterRights      ✓ CharacterID, Name (para gamemaster, etc.)
+CharacterDeaths      ✓ Para historial de muertes
+Buddies              ✓ Lista de amigos
+WorldInvitations     ✓ Invitaciones a mundos
+LoginAttempts        ✓ Intentos de login
+Banishments          ✓ Sistema de bans
+IPBanishments        ✓ Bans por IP
+Namelocks            ✓ Cambios de nombre
+Notations            ✓ Anotaciones de staff
+Statements           ✓ Chat del juego
+ReportedStatements   ✓ Reportes de chat
+Guilds               ✓ Creadas en v0.3
+GuildMembers         ✓ Creadas en v0.3
+GuildInvites         ✓ Creadas en v0.3
+GuildRanks           ✓ Rangos de guild
+Houses               ✓ Información de casas
+HouseOwners          ✓ Dueños actuales
+HouseAuctions        ✓ Sistema de subastas
+HouseTransfers       ✓ Transferencias
+HouseAssignments     ✓ Historial de asignaciones
+HouseAuctionExclusions  ✓ Exclusiones de subastas
+Worlds               ✓ Información de mundos
+KillStatistics       ✓ Estadísticas de asesinatos
+OnlineCharacters     ✓ Personajes online
+
+
+🔴 SOLO NECESITAS AGREGAR:
+─────────────────────────────────────────────────────────────────────────────
+news                 ⚠️ NUEVA (NO EXISTE)
+                        Campos: id, title, content, created_at
+                        Para: Sistema de noticias en la web
+
+
+🟡 SOLO NECESITAS ACTUALIZAR:
+─────────────────────────────────────────────────────────────────────────────
+Guilds               ⚡ ADD COLUMN description TEXT
+                        Para: Descripciones de guilds en la web
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+COMANDOS RÁPIDOS
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣ CREAR TABLA NEWS:
+   sqlite3 tibia.db < database/migrations.sql
+
+2️⃣ O MANUALMENTE:
+   sqlite3 tibia.db
+   > CREATE TABLE IF NOT EXISTS news (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       title VARCHAR(255) NOT NULL,
+       content TEXT NOT NULL,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     );
+   > .quit
+
+3️⃣ AGREGAR COLUMNA A GUILDS:
+   sqlite3 tibia.db "ALTER TABLE Guilds ADD COLUMN description TEXT DEFAULT '';"
+
+4️⃣ VERIFICAR:
+   sqlite3 tibia.db ".tables"
+   sqlite3 tibia.db "SELECT * FROM news LIMIT 1;"
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+ESTRUCTURA DE TUS 3 BASES DE DATOS
+════════════════════════════════════════════════════════════════════════════════
+
+📁 schema.sql
+   └─ Contiene: Accounts, Characters, Guilds, Houses, etc. (versión v1.0)
+
+📁 z-001-migrate-v01-to-v02.sql
+   └─ Agrega: Tabla Patches
+   └─ Cambios: Renombra columnas, agrega LastStartup/LastShutdown
+
+📁 z-002-migrate-v02-to-v03.sql
+   └─ Agrega: Guilds, GuildMembers, GuildInvites, GuildRanks (nuevo sistema)
+   └─ Elimina: Columnas Guild, Rank, Title de Characters
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+ESTADO FINAL
+════════════════════════════════════════════════════════════════════════════════
+
+✅ Después de ejecutar migrations.sql tu base de datos será 100% compatible
+   con todas las features de la Tibia Web Server:
+   
+   • Sistema de noticias ✓
+   • Gestión de guilds ✓
+   • Descripciones de guilds ✓
+   • Sistema de subastas de casas ✓
+   • Acceso de admin (gamemaster) ✓
+   • Validación de premium ✓
