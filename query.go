@@ -785,7 +785,7 @@ func GetGuildHouseID(OwnerCharacterID int) int {
 
         var houseID int
         err := g_NewsDb.QueryRow(`
-                SELECT houseid FROM houses WHERE owner = $1 AND guildhouse = true LIMIT 1
+                SELECT houseid FROM houses WHERE owner = ? AND guildhouse = true LIMIT 1
         `, OwnerCharacterID).Scan(&houseID)
         if err != nil {
                 // No guild house found
@@ -839,11 +839,38 @@ func GetGuilds() []TGuild {
                         continue
                 }
                 
-                // Get leader name from Characters
                 guild.Leader = GetCharacterNameByID(leaderID)
-                
-                // Get guild house (owned by the leader)
                 guild.GuildHouseID = GetGuildHouseID(leaderID)
+                
+                // Calculate last activity from members' joined timestamps
+                var lastActivity int
+                err = g_NewsDb.QueryRow(`
+                        SELECT COALESCE(MAX(joined), 0) FROM guildmembers WHERE guildid = ?
+                `, guild.GuildID).Scan(&lastActivity)
+                if err != nil {
+                        lastActivity = guild.Created
+                }
+                guild.LastActivity = lastActivity
+                
+                // Count vice leaders (rank = 1)
+                var viceLeaderCount int
+                err = g_NewsDb.QueryRow(`
+                        SELECT COUNT(*) FROM guildmembers WHERE guildid = ? AND rank = 1
+                `, guild.GuildID).Scan(&viceLeaderCount)
+                if err != nil {
+                        viceLeaderCount = 0
+                }
+                guild.ViceLeaderCount = viceLeaderCount
+                
+                // Calculate if guild is inactive (no activity for 2 weeks = 1209600 seconds)
+                now := time.Now().Unix()
+                inactivityTime := int64(1209600) // 2 weeks
+                if int64(guild.LastActivity) > 0 && (now - int64(guild.LastActivity)) > inactivityTime {
+                        guild.IsInactive = true
+                        guild.DisbandDate = guild.LastActivity + 1209600
+                } else {
+                        guild.IsInactive = false
+                }
                 
                 guilds = append(guilds, guild)
         }
@@ -858,7 +885,7 @@ func GetCharacterNameByID(CharacterID int) string {
 
         var name string
         err := g_NewsDb.QueryRow(`
-                SELECT name FROM characters WHERE characterid = $1
+                SELECT name FROM characters WHERE characterid = ?
         `, CharacterID).Scan(&name)
         if err != nil {
                 // Try demo mode - just return a placeholder
@@ -883,7 +910,7 @@ func GetGuild(GuildID int) *TGuild {
                        COUNT(DISTINCT gm.characterid) as member_count
                 FROM guilds g
                 LEFT JOIN guildmembers gm ON g.guildid = gm.guildid
-                WHERE g.guildid = $1
+                WHERE g.guildid = ?
                 GROUP BY g.guildid, g.name, g.description, g.leaderid, g.created
         `, GuildID).Scan(&guild.GuildID, &guild.Name, &guild.Description, &leaderID, &guild.Created, &guild.MemberCount)
         if err != nil {
@@ -892,9 +919,37 @@ func GetGuild(GuildID int) *TGuild {
         }
 
         guild.Leader = GetCharacterNameByID(leaderID)
-        
-        // Get guild house (owned by the leader)
         guild.GuildHouseID = GetGuildHouseID(leaderID)
+        
+        // Calculate last activity from members' joined timestamps
+        var lastActivity int
+        err = g_NewsDb.QueryRow(`
+                SELECT COALESCE(MAX(joined), 0) FROM guildmembers WHERE guildid = ?
+        `, GuildID).Scan(&lastActivity)
+        if err != nil {
+                lastActivity = guild.Created
+        }
+        guild.LastActivity = lastActivity
+        
+        // Count vice leaders (rank = 1)
+        var viceLeaderCount int
+        err = g_NewsDb.QueryRow(`
+                SELECT COUNT(*) FROM guildmembers WHERE guildid = ? AND rank = 1
+        `, GuildID).Scan(&viceLeaderCount)
+        if err != nil {
+                viceLeaderCount = 0
+        }
+        guild.ViceLeaderCount = viceLeaderCount
+        
+        // Calculate if guild is inactive (no activity for 2 weeks = 1209600 seconds)
+        now := time.Now().Unix()
+        inactivityTime := int64(1209600) // 2 weeks
+        if int64(guild.LastActivity) > 0 && (now - int64(guild.LastActivity)) > inactivityTime {
+                guild.IsInactive = true
+                guild.DisbandDate = guild.LastActivity + 1209600
+        } else {
+                guild.IsInactive = false
+        }
         
         return &guild
 }
@@ -925,7 +980,7 @@ func GetGuildMembers(GuildID int) []TGuildMember {
                        c.name, c.level, c.profession
                 FROM guildmembers gm
                 LEFT JOIN characters c ON gm.characterid = c.characterid
-                WHERE gm.guildid = $1
+                WHERE gm.guildid = ?
                 ORDER BY gm.rank ASC, c.level DESC
         `, GuildID)
         if err != nil {
@@ -989,7 +1044,7 @@ func CreateGuild(GuildName string, LeaderCharacterName string) int {
 
         var leaderID int
         err := g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE name = $1
+                SELECT characterid FROM characters WHERE name = ?
         `, LeaderCharacterName).Scan(&leaderID)
         if err != nil {
                 g_LogErr.Printf("Failed to find character: %v", err)
@@ -998,7 +1053,7 @@ func CreateGuild(GuildName string, LeaderCharacterName string) int {
 
         var existingGuild int
         err = g_NewsDb.QueryRow(`
-                SELECT COUNT(*) FROM guilds WHERE name = $1
+                SELECT COUNT(*) FROM guilds WHERE name = ?
         `, GuildName).Scan(&existingGuild)
         if err == nil && existingGuild > 0 {
                 return 1
@@ -1006,7 +1061,7 @@ func CreateGuild(GuildName string, LeaderCharacterName string) int {
 
         var existingLeader int
         err = g_NewsDb.QueryRow(`
-                SELECT COUNT(*) FROM guilds WHERE leaderid = $1
+                SELECT COUNT(*) FROM guilds WHERE leaderid = ?
         `, leaderID).Scan(&existingLeader)
         if err == nil && existingLeader > 0 {
                 return 2
@@ -1014,7 +1069,7 @@ func CreateGuild(GuildName string, LeaderCharacterName string) int {
 
         _, err = g_NewsDb.Exec(`
                 INSERT INTO guilds (name, leaderid, created)
-                VALUES ($1, $2, $3)
+                VALUES (?, ?, ?)
         `, GuildName, leaderID, time.Now().Unix())
         if err != nil {
                 g_LogErr.Printf("Failed to create guild: %v", err)
@@ -1030,7 +1085,7 @@ func GetGuildLeaderCharID(GuildID int) int {
         }
         var leaderID int
         err := g_NewsDb.QueryRow(`
-                SELECT leaderid FROM guilds WHERE guildid = $1
+                SELECT leaderid FROM guilds WHERE guildid = ?
         `, GuildID).Scan(&leaderID)
         if err != nil {
                 return 0
@@ -1046,7 +1101,7 @@ func IsCharacterLeader(AccountID int, GuildID int) bool {
         err := g_NewsDb.QueryRow(`
                 SELECT COUNT(*) FROM guilds g
                 JOIN characters c ON g.leaderid = c.characterid
-                WHERE g.guildid = $1 AND c.accountid = $2
+                WHERE g.guildid = ? AND c.accountid = ?
         `, GuildID, AccountID).Scan(&count)
         if err != nil {
                 return false
@@ -1061,13 +1116,13 @@ func GetCharacterGuildRank(AccountID int, GuildID int) int {
         var rank int
         var leaderID int
         err := g_NewsDb.QueryRow(`
-                SELECT leaderid FROM guilds WHERE guildid = $1
+                SELECT leaderid FROM guilds WHERE guildid = ?
         `, GuildID).Scan(&leaderID)
         if err != nil {
                 return -1
         }
         err = g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE accountid = $1
+                SELECT characterid FROM characters WHERE accountid = ?
         `, AccountID).Scan(&rank)
         if err != nil {
                 return -1
@@ -1077,8 +1132,8 @@ func GetCharacterGuildRank(AccountID int, GuildID int) int {
         }
         err = g_NewsDb.QueryRow(`
                 SELECT rank FROM guildmembers 
-                WHERE characterid = (SELECT characterid FROM characters WHERE accountid = $1)
-                AND guildid = $2
+                WHERE characterid = (SELECT characterid FROM characters WHERE accountid = ?)
+                AND guildid = ?
         `, AccountID, GuildID).Scan(&rank)
         if err != nil {
                 return -1
@@ -1097,28 +1152,28 @@ func InviteCharacterToGuild(GuildID int, CharacterName string) int {
         }
         var charID int
         err := g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE name = $1
+                SELECT characterid FROM characters WHERE name = ?
         `, CharacterName).Scan(&charID)
         if err != nil {
                 return 1
         }
         var isMember int
         err = g_NewsDb.QueryRow(`
-                SELECT COUNT(*) FROM guildmembers WHERE characterid = $1
+                SELECT COUNT(*) FROM guildmembers WHERE characterid = ?
         `, charID).Scan(&isMember)
         if err == nil && isMember > 0 {
                 return 2
         }
         var hasInvite int
         err = g_NewsDb.QueryRow(`
-                SELECT COUNT(*) FROM guildinvites WHERE characterid = $1 AND guildid = $2
+                SELECT COUNT(*) FROM guildinvites WHERE characterid = ? AND guildid = ?
         `, charID, GuildID).Scan(&hasInvite)
         if err == nil && hasInvite > 0 {
                 return 3
         }
         _, err = g_NewsDb.Exec(`
                 INSERT INTO guildinvites (guildid, characterid, recruiterid, timestamp)
-                VALUES ($1, $2, 0, $3)
+                VALUES (?, ?, 0, ?)
         `, GuildID, charID, time.Now().Unix())
         if err != nil {
                 return 4
@@ -1132,13 +1187,13 @@ func RevokeGuildInvite(GuildID int, CharacterName string) int {
         }
         var charID int
         err := g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE name = $1
+                SELECT characterid FROM characters WHERE name = ?
         `, CharacterName).Scan(&charID)
         if err != nil {
                 return 1
         }
         _, err = g_NewsDb.Exec(`
-                DELETE FROM guildinvites WHERE guildid = $1 AND characterid = $2
+                DELETE FROM guildinvites WHERE guildid = ? AND characterid = ?
         `, GuildID, charID)
         if err != nil {
                 return 1
@@ -1153,19 +1208,19 @@ func ExpelMemberFromGuild(GuildID int, CharacterName string) int {
         var charID int
         var leaderID int
         err := g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE name = $1
+                SELECT characterid FROM characters WHERE name = ?
         `, CharacterName).Scan(&charID)
         if err != nil {
                 return 1
         }
         err = g_NewsDb.QueryRow(`
-                SELECT leaderid FROM guilds WHERE guildid = $1
+                SELECT leaderid FROM guilds WHERE guildid = ?
         `, GuildID).Scan(&leaderID)
         if err == nil && leaderID == charID {
                 return 2
         }
         _, err = g_NewsDb.Exec(`
-                DELETE FROM guildmembers WHERE guildid = $1 AND characterid = $2
+                DELETE FROM guildmembers WHERE guildid = ? AND characterid = ?
         `, GuildID, charID)
         if err != nil {
                 return 2
@@ -1192,7 +1247,7 @@ func GetGuildInvites(GuildID int) []TGuildInvite {
                 SELECT gi.characterid, c.name, gi.recruiterid, gi.timestamp
                 FROM guildinvites gi
                 LEFT JOIN characters c ON gi.characterid = c.characterid
-                WHERE gi.guildid = $1
+                WHERE gi.guildid = ?
                 ORDER BY gi.timestamp DESC
         `, GuildID)
         if err != nil {
@@ -1230,13 +1285,13 @@ func GetCharacterGuildInvite(AccountID int) (int, int) {
         var charID int
         var guildID int
         err := g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE accountid = $1
+                SELECT characterid FROM characters WHERE accountid = ?
         `, AccountID).Scan(&charID)
         if err != nil {
                 return -1, -1
         }
         err = g_NewsDb.QueryRow(`
-                SELECT guildid FROM guildinvites WHERE characterid = $1
+                SELECT guildid FROM guildinvites WHERE characterid = ?
         `, charID).Scan(&guildID)
         if err != nil {
                 return -1, -1
@@ -1250,7 +1305,7 @@ func AcceptGuildInvite(AccountID int, GuildID int) int {
         }
         var charID int
         err := g_NewsDb.QueryRow(`
-                SELECT characterid FROM characters WHERE accountid = $1
+                SELECT characterid FROM characters WHERE accountid = ?
         `, AccountID).Scan(&charID)
         if err != nil {
                 return 1
@@ -1258,7 +1313,7 @@ func AcceptGuildInvite(AccountID int, GuildID int) int {
         
         var inviteExists int
         err = g_NewsDb.QueryRow(`
-                SELECT COUNT(*) FROM guildinvites WHERE characterid = $1 AND guildid = $2
+                SELECT COUNT(*) FROM guildinvites WHERE characterid = ? AND guildid = ?
         `, charID, GuildID).Scan(&inviteExists)
         if err != nil || inviteExists == 0 {
                 return 2
@@ -1266,14 +1321,14 @@ func AcceptGuildInvite(AccountID int, GuildID int) int {
         
         _, err = g_NewsDb.Exec(`
                 INSERT INTO guildmembers (guildid, characterid, rank, joined, status)
-                VALUES ($1, $2, 2, $3, 'active')
+                VALUES (?, ?, 2, ?, 'active')
         `, GuildID, charID, time.Now().Unix())
         if err != nil {
                 return 3
         }
         
         _, err = g_NewsDb.Exec(`
-                DELETE FROM guildinvites WHERE characterid = $1 AND guildid = $2
+                DELETE FROM guildinvites WHERE characterid = ? AND guildid = ?
         `, charID, GuildID)
         
         return 0
@@ -1285,7 +1340,7 @@ func UpdateGuildDescription(GuildID int, Description string) int {
         }
         
         _, err := g_NewsDb.Exec(`
-                UPDATE guilds SET description = $1 WHERE guildid = $2
+                UPDATE guilds SET description = ? WHERE guildid = ?
         `, Description, GuildID)
         if err != nil {
                 g_LogErr.Printf("Failed to update guild description: %v", err)
@@ -1304,7 +1359,7 @@ func IsAccountGamemaster(AccountID int) bool {
         err := g_NewsDb.QueryRow(`
                 SELECT COUNT(*) FROM CharacterRights cr
                 JOIN Characters c ON cr.CharacterID = c.CharacterID
-                WHERE c.AccountID = $1 AND cr.Name = 'gamemaster'
+                WHERE c.AccountID = ? AND cr.Name = 'gamemaster'
         `, AccountID).Scan(&count)
         if err != nil {
                 return false
@@ -1329,7 +1384,7 @@ func IsAccountPremium(AccountID int) bool {
         
         var premiumEnd int64
         err := g_NewsDb.QueryRow(`
-                SELECT PremiumEnd FROM Accounts WHERE AccountID = $1
+                SELECT PremiumEnd FROM Accounts WHERE AccountID = ?
         `, AccountID).Scan(&premiumEnd)
         if err != nil {
                 return false
@@ -1347,7 +1402,7 @@ func GetAccountHousesRented(AccountID int) int {
         err := g_NewsDb.QueryRow(`
                 SELECT COUNT(*) FROM HouseOwners ho
                 JOIN Characters c ON ho.OwnerID = c.CharacterID
-                WHERE c.AccountID = $1
+                WHERE c.AccountID = ?
         `, AccountID).Scan(&count)
         if err != nil {
                 return 0
@@ -1371,7 +1426,7 @@ func CanBidOnHouse(AccountID int, HouseID int, IsGuildHouse bool) bool {
                 var hasGuildHouse int
                 err := g_NewsDb.QueryRow(`
                         SELECT COUNT(*) FROM HouseOwners WHERE OwnerID IN 
-                        (SELECT CharacterID FROM Characters WHERE AccountID = $1)
+                        (SELECT CharacterID FROM Characters WHERE AccountID = ?)
                 `, AccountID).Scan(&hasGuildHouse)
                 if err == nil && hasGuildHouse > 0 {
                         return false
@@ -1380,7 +1435,7 @@ func CanBidOnHouse(AccountID int, HouseID int, IsGuildHouse bool) bool {
                 var isGuildLeader int
                 err = g_NewsDb.QueryRow(`
                         SELECT COUNT(*) FROM Guilds g
-                        WHERE g.LeaderID IN (SELECT CharacterID FROM Characters WHERE AccountID = $1)
+                        WHERE g.LeaderID IN (SELECT CharacterID FROM Characters WHERE AccountID = ?)
                 `, AccountID).Scan(&isGuildLeader)
                 if err != nil || isGuildLeader == 0 {
                         return false
@@ -1406,7 +1461,7 @@ func GetHouseAuctionInfo(HouseID int) *THouseAuction {
         
         err := g_NewsDb.QueryRow(`
                 SELECT HouseID, COALESCE(BidderID, 0), COALESCE(BidAmount, 0), COALESCE(FinishTime, 0)
-                FROM HouseAuctions WHERE HouseID = $1
+                FROM HouseAuctions WHERE HouseID = ?
         `, HouseID).Scan(&auction.HouseID, &bidderID, &bidAmount, &finishTime)
         if err != nil {
                 return nil
@@ -1437,7 +1492,7 @@ func PlaceHouseBid(HouseID int, CharacterID int, BidAmount int) int {
         
         var currentBid int
         err := g_NewsDb.QueryRow(`
-                SELECT COALESCE(BidAmount, 0) FROM HouseAuctions WHERE HouseID = $1
+                SELECT COALESCE(BidAmount, 0) FROM HouseAuctions WHERE HouseID = ?
         `, HouseID).Scan(&currentBid)
         if err != nil && err != sql.ErrNoRows {
                 return 3
@@ -1450,18 +1505,18 @@ func PlaceHouseBid(HouseID int, CharacterID int, BidAmount int) int {
         now := time.Now().Unix()
         var finishTime int64
         err = g_NewsDb.QueryRow(`
-                SELECT COALESCE(FinishTime, 0) FROM HouseAuctions WHERE HouseID = $1
+                SELECT COALESCE(FinishTime, 0) FROM HouseAuctions WHERE HouseID = ?
         `, HouseID).Scan(&finishTime)
         
         if finishTime == 0 {
                 finishTime = now + (7 * 24 * 60 * 60)
                 _, err = g_NewsDb.Exec(`
                         INSERT INTO HouseAuctions (HouseID, BidderID, BidAmount, FinishTime)
-                        VALUES ($1, $2, $3, $4)
+                        VALUES (?, ?, ?, ?)
                 `, HouseID, CharacterID, BidAmount, finishTime)
         } else {
                 _, err = g_NewsDb.Exec(`
-                        UPDATE HouseAuctions SET BidderID = $1, BidAmount = $2 WHERE HouseID = $3
+                        UPDATE HouseAuctions SET BidderID = ?, BidAmount = ? WHERE HouseID = ?
                 `, CharacterID, BidAmount, HouseID)
         }
         

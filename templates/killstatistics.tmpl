@@ -13,6 +13,24 @@
                         </div>
                 </div>
                 <div class="content-body">
+                        {{with .World}}
+                                <table class="info">
+                                        <tr>
+                                                <th>Players Online:</th>
+                                                <td>{{.NumPlayers}}</td>
+                                        </tr>
+                                        <tr>
+                                                {{if gt .LastStartup .LastShutdown}}
+                                                        <th>Uptime:</th>
+                                                        <td>{{FormatDurationSince .LastStartup}}</td>
+                                                {{else}}
+                                                        <th>Downtime:</th>
+                                                        <td style="color: #A11;">{{FormatDurationSince .LastShutdown}}</td>
+                                                {{end}}
+                                        </tr>
+                                </table>
+                                <br>
+                        {{end}}
                         {{if .KillStatistics}}
                                 <table>
                                         <tr>

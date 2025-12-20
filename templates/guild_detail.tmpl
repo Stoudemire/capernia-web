@@ -24,11 +24,15 @@
                                 {{end}}
                                 
                                 <p style="text-align: left; margin-bottom: 5px;">The guild was founded on {{.Guild.Created | FormatTimestamp}}.</p>
+                                {{if .Guild.IsInactive}}
+                                <p style="text-align: left; margin-bottom: 5px; color: #A11;">It is currently inactive and will be disbanded on {{.Guild.DisbandDate | FormatTimestamp}}.</p>
+                                {{else}}
                                 {{if .Guild.GuildHouseID}}
                                 <p style="text-align: left; margin-bottom: 5px;">It is currently active.</p>
                                 <p style="text-align: left; margin-bottom: 30px;">Their home is <a href="/house?id={{.Guild.GuildHouseID}}" style="color: #c9a86a; text-decoration: none;">linked to this guild house</a>.</p>
                                 {{else}}
                                 <p style="text-align: left; margin-bottom: 30px;">It is currently active.</p>
+                                {{end}}
                                 {{end}}
                                 
                                 {{if .Members}}
